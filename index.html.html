@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<title>計量之器 — カロリー・PFC・体重の記録</title>
+<style>
+:root{
+  color-scheme:light only;
+  --kinari:#EDE7DA; --sumi:#1E1B18; --usuzumi:#6B6259;
+  --ai:#2C4A6B; --enji:#8C3A3A; --shu:#B03A28;
+  --kincha:#A8813C; --midori:#56684A; --keisen:#C8BFAC;
+}
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;background:#EDE7DA;color:#1E1B18;}
+body{margin:0;background:var(--kinari);
+  background-image:repeating-linear-gradient(90deg,rgba(120,105,80,.035) 0 1px,transparent 1px 3px);
+  color:var(--sumi);font-family:"Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+  font-size:15px;line-height:1.7;}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px 72px;}
+header{padding:30px 0 14px;border-bottom:1px solid var(--keisen);margin-bottom:14px;}
+header h1{font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-size:32px;font-weight:600;letter-spacing:.18em;margin:0 0 3px;}
+header .sub{font-size:11px;letter-spacing:.3em;color:var(--kincha);margin:0;}
+h2{font-family:"Yu Mincho","Hiragino Mincho ProN",serif;font-size:15px;font-weight:600;letter-spacing:.16em;
+  margin:24px 0 9px;padding-left:11px;border-left:3px solid var(--ai);}
+.tabs{display:flex;gap:6px;margin-bottom:16px;}
+.tabs button{flex:1;padding:11px 4px;font-family:"Yu Mincho",serif;font-size:14px;letter-spacing:.18em;cursor:pointer;
+  background:rgba(255,253,248,.6);color:var(--sumi);border:1px solid var(--keisen);border-radius:7px;}
+.tabs button[aria-pressed="true"]{background:var(--sumi);color:#F2EDE3;border-color:var(--sumi);}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;}
+.seg button{flex:1 1 auto;min-width:62px;padding:8px 5px;font-size:12.5px;font-family:inherit;letter-spacing:.05em;
+  cursor:pointer;background:rgba(255,253,248,.6);color:var(--sumi);border:1px solid var(--keisen);border-radius:6px;}
+.seg button[aria-pressed="true"]{background:var(--ai);color:#F2EDE3;border-color:var(--ai);font-weight:700;}
+.seg button:focus-visible,.tabs button:focus-visible{outline:2px solid var(--shu);outline-offset:2px;}
+.panel{border:1px solid var(--sumi);border-radius:10px;overflow:hidden;background:rgba(255,253,248,.55);margin-bottom:15px;}
+.panel-head{background:var(--sumi);color:#F2EDE3;padding:9px 15px;display:flex;justify-content:space-between;
+  align-items:baseline;font-family:"Yu Mincho",serif;font-size:13px;letter-spacing:.16em;}
+.panel-head .d{font-size:11px;opacity:.85;letter-spacing:.04em;font-family:ui-monospace,monospace;}
+.panel-body{padding:14px 15px;}
+.mrow{margin-bottom:12px;} .mrow:last-child{margin-bottom:0;}
+.mtop{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:4px;}
+.mtop .lb{letter-spacing:.1em;color:var(--usuzumi);}
+.mtop .vl{font-family:ui-monospace,monospace;font-variant-numeric:tabular-nums;font-size:13.5px;}
+.mtop .vl b{font-size:17px;}
+.mtop .rem{font-size:11.5px;color:var(--usuzumi);}
+.mtop .kc{font-size:11.5px;color:var(--usuzumi);margin-left:6px;}
+.bkban{display:none;margin:0 0 14px;padding:12px 14px;border-radius:4px;
+  background:#F4E3DC;border-left:4px solid #9B4B3F;color:#6B3229;font-size:13px;line-height:1.8;}
+.bkban.on{display:block;}
+.nowph{margin:0 0 14px;padding:12px 14px;border-radius:4px;border:1px solid var(--sen);
+  border-left:5px solid var(--ai);background:#F7F3E9;line-height:1.75;}
+.nowph .ttl{font-size:17px;font-weight:600;letter-spacing:.08em;display:block;}
+.nowph .sub{font-size:12.5px;color:var(--usuzumi);display:block;margin-top:2px;}
+.nowph .kc{font-size:13.5px;margin-top:6px;display:block;}
+.nowph .kc b{font-size:16px;}
+.nowph.aka{border-left-color:var(--ai);}
+.nowph.iji{border-left-color:var(--kincha);}
+.nowph.kuro{border-left-color:var(--midori);}
+.bkban b{font-size:14px;}
+.track{height:13px;background:rgba(200,190,170,.4);border-radius:2px;overflow:hidden;}
+.track i{display:block;height:100%;width:0;background:var(--ai);transition:width .25s ease;}
+.track.ok i{background:var(--midori);} .track.over i{background:var(--shu);}
+.track.p i{background:var(--kincha);} .track.p.ok i{background:var(--midori);} .track.p.over i{background:var(--midori);}
+select,input[type="number"],input[type="text"],input[type="date"]{width:100%;padding:10px 11px;font-size:15px;font-family:inherit;
+  background:#FBF8F1;color:var(--sumi);border:1px solid var(--keisen);border-radius:6px;}
+.add{display:grid;gap:8px;margin-bottom:10px;}
+.add-row{display:flex;gap:8px;}
+.add-row input{flex:1;font-family:ui-monospace,monospace;}
+.add-row button{flex:0 0 84px;background:var(--ai);color:#F2EDE3;border:0;border-radius:6px;
+  font-family:inherit;font-size:14px;letter-spacing:.1em;cursor:pointer;}
+.pv{font-family:ui-monospace,monospace;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ai);
+  background:rgba(44,74,107,.06);border:1px solid var(--keisen);border-radius:6px;padding:9px 12px;}
+.pv b{font-size:16px;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;}
+.chips button{padding:5px 11px;font-size:12px;font-family:ui-monospace,monospace;cursor:pointer;
+  background:rgba(255,253,248,.7);border:1px solid var(--keisen);border-radius:14px;color:var(--sumi);}
+.btn-wide{width:100%;padding:11px;font-family:"Yu Mincho",serif;font-size:14px;letter-spacing:.16em;
+  background:var(--midori);color:#F2EDE3;border:0;border-radius:7px;cursor:pointer;margin-bottom:8px;}
+.btn-sub{width:100%;padding:9px;font-family:inherit;font-size:12.5px;letter-spacing:.1em;
+  background:transparent;color:var(--enji);border:1px solid var(--enji);border-radius:7px;cursor:pointer;}
+.btn-ghost{width:100%;padding:9px;font-family:inherit;font-size:12.5px;letter-spacing:.1em;
+  background:transparent;color:var(--ai);border:1px solid var(--ai);border-radius:7px;cursor:pointer;margin-bottom:8px;}
+ul.list{list-style:none;margin:0;padding:0;}
+ul.list li{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--keisen);font-size:13.5px;}
+ul.list li .nm{flex:1;min-width:0;}
+ul.list li .nm small{display:block;color:var(--usuzumi);font-size:11px;font-family:ui-monospace,monospace;}
+ul.list li .kc{font-family:ui-monospace,monospace;font-variant-numeric:tabular-nums;font-size:13px;white-space:nowrap;}
+ul.list li .del{flex:0 0 26px;height:26px;border:1px solid var(--keisen);border-radius:50%;
+  background:transparent;color:var(--enji);cursor:pointer;font-size:14px;line-height:1;}
+.empty{color:var(--usuzumi);font-size:13px;padding:12px 0;}
+.note{font-size:12px;color:var(--usuzumi);border-left:3px solid var(--kincha);padding-left:12px;margin:13px 0;}
+.warn{font-size:12.5px;color:#4A423A;border:1px solid var(--enji);background:rgba(140,58,58,.05);
+  border-radius:7px;padding:12px 14px;margin:0 0 14px;}
+.wrow{display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.wrow label{flex:0 0 auto;font-size:13px;letter-spacing:.08em;color:var(--usuzumi);}
+.wrow input{flex:1;font-family:ui-monospace,monospace;}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.calhead button{width:40px;height:36px;border:1px solid var(--keisen);border-radius:6px;background:rgba(255,253,248,.7);
+  color:var(--sumi);font-size:16px;cursor:pointer;}
+.calhead span{font-family:"Yu Mincho",serif;font-size:17px;letter-spacing:.14em;}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal .dow{text-align:center;font-size:10.5px;color:var(--usuzumi);padding:3px 0;letter-spacing:.06em;}
+.cal .cell{aspect-ratio:1;border:1px solid var(--keisen);border-radius:6px;background:rgba(255,253,248,.5);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:2px;}
+.cal .cell.blank{border:0;background:transparent;cursor:default;}
+.cal .cell.today{border-color:var(--sumi);border-width:2px;}
+.cal .cell.sel{background:rgba(44,74,107,.16);}
+.cal .cell .dn{font-family:ui-monospace,monospace;font-size:12px;}
+.cal .cell .dot{width:7px;height:7px;border-radius:50%;background:transparent;}
+.cal .cell .dot.ok{background:var(--midori);}
+.cal .cell .dot.un{background:var(--kincha);}
+.cal .cell .dot.ov{background:var(--shu);}
+.cal .cell .wk{font-size:9px;font-family:ui-monospace,monospace;color:var(--usuzumi);line-height:1;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--usuzumi);margin-top:10px;}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;}
+.duty{list-style:none;margin:0;padding:0;}
+.duty li{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px dashed var(--keisen);font-size:13.5px;}
+.duty li:last-child{border-bottom:0;}
+.duty .dm{flex:0 0 1.2em;text-align:center;color:var(--usuzumi);font-family:ui-monospace,monospace;}
+.duty .dm.ok{color:var(--midori);font-weight:700;}
+.duty .dl.dim{color:var(--usuzumi);}
+.duty .dl small{color:var(--usuzumi);font-size:11px;}
+.cal .cell .mk{font-style:normal;font-size:8.5px;margin-left:1px;font-weight:700;letter-spacing:0;}
+.mkcalc{border:1px solid var(--keisen);border-radius:9px;padding:12px 12px 6px;background:rgba(255,253,248,.5);margin-bottom:14px;}
+.mkcalc .wrow label{flex:0 0 8.6em;font-size:12px;}
+.mkcalc .wrow{margin-bottom:8px;}
+.apply{display:flex;gap:7px;margin:10px 0 6px;}
+.apply button{flex:1;padding:9px 4px;font-family:inherit;font-size:12.5px;letter-spacing:.06em;cursor:pointer;background:var(--ai);color:#F2EDE3;border:0;border-radius:6px;}
+.apply button.gh{background:transparent;color:var(--ai);border:1px solid var(--ai);}
+.wkrow{margin-bottom:13px;}
+.wkl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--usuzumi);margin-bottom:4px;letter-spacing:.06em;}
+.wkn{font-family:ui-monospace,monospace;font-size:11.5px;color:#4A423A;margin-top:4px;font-variant-numeric:tabular-nums;}
+.chart{width:100%;height:auto;display:block;margin-bottom:6px;}
+.stat{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px;}
+.stat div{border:1px solid var(--keisen);border-radius:7px;padding:10px 12px;background:rgba(255,253,248,.5);}
+.stat dt{font-size:10.5px;letter-spacing:.12em;color:var(--usuzumi);margin:0 0 2px;}
+.stat dd{margin:0;font-family:ui-monospace,monospace;font-size:19px;color:var(--ai);font-variant-numeric:tabular-nums;}
+.stat dd small{font-size:11px;color:var(--usuzumi);}
+.trsum{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--ai);font-variant-numeric:tabular-nums;
+  border:1px solid var(--keisen);border-radius:7px;background:rgba(44,74,107,.06);padding:9px 12px;margin-bottom:13px;}
+.exq{border:1px solid var(--keisen);border-radius:9px;background:rgba(255,253,248,.55);margin-bottom:12px;overflow:hidden;}
+.exq-h{display:flex;align-items:baseline;gap:8px;padding:9px 12px;background:rgba(44,74,107,.08);}
+.exq-h .xn{flex:1;font-weight:700;font-size:13.5px;min-width:0;}
+.exq-h .tg{font-family:ui-monospace,monospace;font-size:11px;color:var(--usuzumi);white-space:nowrap;}
+.exq-h .xdel{flex:0 0 24px;height:24px;border:1px solid var(--keisen);border-radius:50%;background:transparent;color:var(--enji);cursor:pointer;font-size:13px;line-height:1;}
+.exq-b{padding:10px 12px;}
+.prev{font-family:ui-monospace,monospace;font-size:11px;color:var(--usuzumi);margin:0 0 8px;}
+.setrow{display:flex;gap:7px;align-items:center;margin-bottom:7px;}
+.setrow .sn{flex:0 0 2em;font-family:ui-monospace,monospace;font-size:12px;color:var(--usuzumi);text-align:center;}
+.setrow input{flex:1;font-family:ui-monospace,monospace;padding:8px 9px;}
+.setrow .sdel{flex:0 0 24px;height:24px;border:1px solid var(--keisen);border-radius:50%;background:transparent;color:var(--enji);cursor:pointer;font-size:13px;line-height:1;}
+.addset{width:100%;padding:8px;font-family:inherit;font-size:12px;letter-spacing:.08em;background:transparent;color:var(--ai);border:1px dashed var(--ai);border-radius:6px;cursor:pointer;}
+textarea{width:100%;min-height:96px;padding:10px;font-family:ui-monospace,monospace;font-size:11px;
+  background:#FBF8F1;color:var(--sumi);border:1px solid var(--keisen);border-radius:6px;}
+footer{margin-top:32px;border-top:1px solid var(--sumi);padding-top:15px;font-size:11.5px;color:var(--usuzumi);line-height:1.8;}
+.hide{display:none!important;}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+@media (prefers-color-scheme:dark){
+  html,body{background:#EDE7DA!important;color:#1E1B18!important;}
+  select,input,textarea{background:#FBF8F1!important;color:#1E1B18!important;}
+  .seg button,.tabs button,.calhead button{background:rgba(255,253,248,.6)!important;color:#1E1B18!important;}
+  .seg button[aria-pressed="true"]{background:#2C4A6B!important;color:#F2EDE3!important;}
+  .tabs button[aria-pressed="true"],.panel-head{background:#1E1B18!important;color:#F2EDE3!important;}
+  h2,ul.list li,.cal .cell{color:#1E1B18!important;}
+  .note,footer,.mtop .lb,.mtop .rem,.empty,.legend,.stat dt{color:#6B6259!important;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>計量之器</h1><p class="sub">體躯之暦 附属 ／ RECORD・CALENDAR・CHART</p></header>
+
+<div class="tabs">
+  <button id="tabRec" aria-pressed="true">記録</button>
+  <button id="tabTr" aria-pressed="false">鍛錬</button>
+  <button id="tabCal" aria-pressed="false">暦</button>
+  <button id="tabChart" aria-pressed="false">図</button>
+</div>
+
+<div id="viewRec">
+  <div id="storeWarn" class="warn hide"></div>
+  <div class="nowph" id="nowPh"></div>
+  <h2>期と日型</h2>
+  <button class="btn-ghost" id="btnSegs">▽ 期・日型を手で変える</button>
+  <div class="hide" id="segWrap">
+    <div class="seg" id="segPhase"></div>
+    <div class="seg" id="segDay"></div>
+  </div>
+  <div class="wrow hide" id="mkRow">
+    <label for="inpMK">目標 kcal</label>
+    <input type="number" id="inpMK" step="10" min="0" inputmode="numeric" placeholder="例 2000">
+  </div>
+  <p class="note hide" id="mkNote">手動：入力したカロリーから 蛋白150g固定・脂質22%・炭水化物は残余 で自動算出します。期の計画値に戻すには上のボタンを押してください。この設定はこの日だけに効きます。</p>
+  <button class="btn-ghost hide" id="btnMkCalc">▽ 代謝から計算する（歩数・通勤・仕事・筋トレ）</button>
+  <div class="mkcalc hide" id="mkCalc">
+    <div class="wrow"><label for="profW">体重 kg</label><input type="number" id="profW" step="0.1" inputmode="decimal"></div>
+    <div class="wrow"><label for="profH">身長 cm</label><input type="number" id="profH" step="1" inputmode="numeric"></div>
+    <div class="wrow"><label for="profA">年齢</label><input type="number" id="profA" step="1" inputmode="numeric"></div>
+    <div class="wrow"><label for="profSex">性別</label><select id="profSex"><option value="m">男</option><option value="f">女</option></select></div>
+    <div class="wrow"><label for="profBF">体脂肪率 %（任意）</label><input type="number" id="profBF" step="0.1" inputmode="decimal" placeholder="未測定なら空欄"></div>
+    <div class="wrow"><label for="profBFM">測定方法</label><select id="profBFM"><option value="none">未測定</option><option value="dexa">DEXA</option><option value="bodpod">BodPod</option><option value="bia">InBody等（BIA）</option><option value="cal">キャリパー</option></select></div>
+    <div class="wrow"><label for="profSteps">1日の平均歩数</label><input type="number" id="profSteps" step="500" inputmode="numeric"></div>
+    <div class="wrow"><label for="profTrn">筋トレ 週何回</label><input type="number" id="profTrn" step="1" min="0" max="7" inputmode="numeric"></div>
+    <div class="wrow"><label for="profTrMin">1回あたり 分</label><input type="number" id="profTrMin" step="5" inputmode="numeric"></div>
+    <div class="wrow"><label for="profCmMode">通勤の手段</label><select id="profCmMode"><option value="trainSit">電車（座り）</option><option value="trainStand">電車（立ち）</option><option value="walk">徒歩（歩数に含める）</option><option value="bike">自転車</option><option value="car">車</option><option value="home">在宅</option></select></div>
+    <div class="wrow"><label for="profCmMin">通勤 片道 分</label><input type="number" id="profCmMin" step="5" inputmode="numeric"></div>
+    <div class="wrow"><label for="profJob">仕事の姿勢</label><select id="profJob"><option value="sit">座り中心</option><option value="half">立ち座り半々</option><option value="stand">立ち中心</option><option value="phys">肉体労働</option></select></div>
+    <div class="pv" id="mkCalcOut">—</div>
+    <div class="apply">
+      <button id="mkApM">維持を目標に</button>
+      <button id="mkAp3" class="gh">−300</button>
+      <button id="mkAp5" class="gh">−500</button>
+    </div>
+    <p class="note">体脂肪率の精度は DEXA＞BodPod＞InBody等BIA＞キャリパー。BIAは±3〜5%ぶれるため、Katch式の値は目安です。徒歩通勤は二重計上を防ぐため通勤欄では加算せず、歩数側に含めてください。目標への反映は、いま選んでいる日型（訓練日／休息日）の消費値を使います。入力は保存され、試算の選択肢にも反映されます。</p>
+  </div>
+  <div class="bkban" id="bkBan"></div>
+<div class="panel">
+    <div class="panel-head"><span>集計</span><span class="d" id="curDate"></span></div>
+    <div class="panel-body" id="meters"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span>本日の務め</span><span class="d" id="dutyWk"></span></div>
+    <div class="panel-body"><ul class="duty" id="dutyList"></ul></div>
+  </div>
+  <h2>体重</h2>
+  <div class="wrow">
+    <label for="inpW">起床直後 kg</label>
+    <input type="number" id="inpW" step="0.1" min="0" inputmode="decimal" placeholder="64.0">
+  </div>
+  <div class="warn hide" id="photoCard" style="border-color:var(--kincha);background:rgba(168,129,60,.07);">
+    <span class="lbl" style="color:var(--kincha);">写真の日（4週ごと）</span>
+    <p style="margin:0 0 8px">同じ場所・同じ光・同じ角度で、正面・横・背面の3枚。朝・食前が理想。判定は体重計ではなくこの写真です。</p>
+    <button class="btn-wide" id="btnPhoto" style="background:var(--kincha);margin:0;">撮影を記録する</button>
+  </div>
+  <div class="wrow hide" id="bfRow">
+    <label for="inpBFd">体脂肪率 %</label>
+    <input type="number" id="inpBFd" step="0.1" min="0" inputmode="decimal" placeholder="同じ機器・同じ時間帯で">
+  </div>
+  <h2 class="hide" id="measH">周径 cm（週1・同曜日）</h2>
+  <div class="mkcalc hide" id="measBox">
+    <div class="wrow"><label for="inpWa">臍（ウエスト）</label><input type="number" id="inpWa" step="0.1" inputmode="decimal"></div>
+    <div class="wrow"><label for="inpAr">上腕</label><input type="number" id="inpAr" step="0.1" inputmode="decimal"></div>
+    <div class="wrow"><label for="inpTh">大腿（最太部）</label><input type="number" id="inpTh" step="0.1" inputmode="decimal"></div>
+    <div class="wrow"><label for="inpCa">ふくらはぎ</label><input type="number" id="inpCa" step="0.1" inputmode="decimal"></div>
+    <p class="note" style="margin:4px 0 0">毎回同じ側・同じ位置・朝食前に。テープは水平、締めすぎない。周径は体重より鋭敏な進捗指標です。</p>
+  </div>
+  <button class="btn-ghost hide" id="btnMeas">▽ 周径を入力する（計測日以外）</button>
+  <h2>固定の組み合わせ</h2>
+  <button class="btn-wide" id="btnFixed">まとめて追加</button>
+  <p class="note" id="fixNote"></p>
+  <button class="btn-ghost" id="btnEditFix">▽ 中身を入れ替える</button>
+  <div class="mkcalc hide" id="fixEdit">
+    <ul class="list" id="fixList"></ul>
+    <p class="note">上で選んでいる食材と数量を、この組み合わせに加えます。</p>
+    <div class="add-row"><button id="btnFixAdd">選択中の食材を加える</button><button class="btn-ghost" id="btnFixReset">既定の六品に戻す</button></div>
+  </div>
+  <h2>食材・料理を追加</h2>
+  <div class="add">
+    <select id="selCat"></select>
+    <select id="selFood"></select>
+    <div class="chips" id="chips"></div>
+    <div class="add-row">
+      <input type="number" id="inpG" min="0" step="1" inputmode="decimal" placeholder="グラム">
+      <button id="btnAdd">追加</button>
+    </div>
+    <div class="pv" id="pv">数量を入れると内訳が出ます</div>
+    <p class="note"><b>◆</b> ＝ <b>入れ忘れるとPFCが狂う食材</b>（一回の量で50kcal以上、または脂質4g・蛋白5g・炭水10g以上に届くもの）。印の無いものは葉物・きのこ・海藻・香辛料など、入れても合計がほとんど動かないため省いても構いません。<br><b>＊</b> ＝ 栄養値を自分で書き換えた食材。</p>
+    <button class="btn-ghost" id="btnEditFood">▽ この食材の栄養値を書き換える</button>
+    <div class="mkcalc hide" id="foodEdit">
+      <p class="note" id="feName"></p>
+      <div class="wrow"><label for="feK">kcal</label><input type="number" id="feK" min="0" step="1" inputmode="decimal"></div>
+      <div class="wrow"><label for="feP">蛋白 g</label><input type="number" id="feP" min="0" step="0.1" inputmode="decimal"></div>
+      <div class="wrow"><label for="feF">脂質 g</label><input type="number" id="feF" min="0" step="0.1" inputmode="decimal"></div>
+      <div class="wrow"><label for="feC">炭水 g</label><input type="number" id="feC" min="0" step="0.1" inputmode="decimal"></div>
+      <div class="add-row"><button id="btnFeSave">この値で保存</button><button class="btn-ghost" id="btnFeReset">既定に戻す</button></div>
+      <p class="note">蕎麦・パン・プロテインのように<strong>商品ごとに成分が違う食材</strong>は、パッケージの数値に置き換えてください。100gあたり（料理は1皿あたり）で入力します。<br>保存すると一覧に <b>＊</b> が付き、以後この食材は常にこの値で計算されます（過去の記録も再計算されます）。書き出し・読み込みにも含まれます。</p>
+    </div>
+    <button class="btn-ghost" id="btnNewFood">▽ 一覧に無い食材・料理を新しく登録する</button>
+    <div class="mkcalc hide" id="newFood">
+      <div class="wrow"><label for="nfName">名前</label><input type="text" id="nfName" placeholder="例：セブン サラダチキン"></div>
+      <div class="wrow"><label for="nfType">単位</label><select id="nfType"><option value="g">100gあたりで入力</option><option value="d">1皿・1個あたりで入力</option></select></div>
+      <div class="wrow"><label for="nfK">kcal</label><input type="number" id="nfK" min="0" step="1" inputmode="decimal"></div>
+      <div class="wrow"><label for="nfP">蛋白 g</label><input type="number" id="nfP" min="0" step="0.1" inputmode="decimal"></div>
+      <div class="wrow"><label for="nfF">脂質 g</label><input type="number" id="nfF" min="0" step="0.1" inputmode="decimal"></div>
+      <div class="wrow"><label for="nfC">炭水 g</label><input type="number" id="nfC" min="0" step="0.1" inputmode="decimal"></div>
+      <div class="add-row"><button id="btnNfSave">登録する</button></div>
+      <p class="note">登録した食材は分類「<b>自作</b>」に入ります。書き出し・読み込みに含まれるので、機種を変えても引き継げます。<br>削除は、分類「自作」で対象を選んでから下の「この食材を削除」を押してください。</p>
+      <ul class="list" id="mineList"></ul>
+    </div>
+  </div>
+  <h2>この日の記録</h2>
+  <ul class="list" id="list"></ul>
+  <div class="empty" id="empty">まだ何も追加されていません。</div>
+  <h2>計画の設定</h2>
+  <button class="btn-ghost" id="btnPlan">▽ 開始日・周径の曜日を設定する</button>
+  <div class="mkcalc hide" id="planBox">
+    <div class="wrow"><label for="planStart">開始日</label><input type="date" id="planStart"></div>
+    <div class="wrow"><label for="planDow">周径の曜日</label><select id="planDow"><option value="0">日曜</option><option value="1">月曜</option><option value="2">火曜</option><option value="3">水曜</option><option value="4">木曜</option><option value="5">金曜</option><option value="6">土曜</option></select></div>
+    <p class="note">開始日を入れると自動化が始まります：期（削ぎ前段〜年次検分）と訓練日／休息日（火水木土日＝訓練、月金＝休息）が日付から自動で切り替わり、写真（4週ごと）・体組成（期の変わり目）・周径（毎週）の予定が「本日の務め」と暦に出ます。月曜を開始日にすると週の切れ目と曜日割が揃います。手で選び直した日はその選択が優先されます。</p>
+  </div>
+  <div style="margin-top:18px"><button class="btn-sub" id="btnReset">この日の記録を消す</button></div>
+</div>
+
+<div id="viewTrain" class="hide">
+  <div class="trsum" id="trSum">—</div>
+  <h2>テンプレ読込（體躯之暦 第三部）</h2>
+  <div class="seg" id="segRt"></div>
+  <p class="note">読み込むと種目と目標（セット×回数・RIR）が入り、この日の日型は自動で「訓練日」になります。各種目には前回の重量×回数が表示されるので、全セットで上限回数に届いた種目は次回+2.5kgしてください。</p>
+  <div id="exList"></div>
+  <div class="empty" id="trEmpty">まだ種目がありません。テンプレを読み込むか、下から追加してください。</div>
+  <h2>種目を追加</h2>
+  <div class="add">
+    <select id="selEx"></select>
+    <div class="add-row">
+      <input type="text" id="inpEx" placeholder="自由入力（例：アームカール）">
+      <button id="btnExAdd">追加</button>
+    </div>
+  </div>
+  <p class="note">選択肢から選ぶと即追加されます。自由入力した種目は次回から選択肢に残ります。過去の日に記録するときは、暦タブでその日をタップしてからここへ。</p>
+</div>
+
+<div id="viewCal" class="hide">
+  <div class="calhead">
+    <button id="calPrev" aria-label="前の月">‹</button>
+    <span id="calTitle"></span>
+    <button id="calNext" aria-label="次の月">›</button>
+  </div>
+  <div class="cal" id="calGrid"></div>
+  <div class="legend">
+    <span><i style="background:#56684A"></i>目標の±5%以内</span>
+    <span><i style="background:#A8813C"></i>不足</span>
+    <span><i style="background:#B03A28"></i>超過</span>
+    <span><b style="color:#56684A">▲</b>訓練あり</span>
+    <span><b style="color:#A8813C">写・測・組</b>＝写真／周径／体組成の予定日（<b style="color:#56684A">緑</b>=済・<b style="color:#8C3A3A">朱</b>=未実施）</span>
+  </div>
+  <p class="note">日をタップすると、その日の記録に切り替わります。数字は摂取カロリー。過去の日も後から入力・修正できます。</p>
+</div>
+
+<div id="viewChart" class="hide">
+  <h2>週平均</h2>
+  <div class="stat" id="stats"></div>
+  <h2>週次の収支と充足率</h2>
+  <div id="wkFul"></div>
+  <p class="note">充足率＝摂取÷目標。<strong>目標には既に赤字が織り込まれているため、どの期も100%付近が理想</strong>です。95%未満は削りすぎ、105%超は食べすぎ。記録した日だけで計算しています。</p>
+  <h2>摂取カロリー 直近30日</h2>
+  <svg class="chart" id="chKcal" viewBox="0 0 340 150" role="img" aria-label="摂取カロリー推移"></svg>
+  <p class="note">灰色の横線がその日の目標。棒が線を下回れば赤字、超えれば黒字です。</p>
+  <h2>体重 直近30日</h2>
+  <svg class="chart" id="chWeight" viewBox="0 0 340 150" role="img" aria-label="体重推移"></svg>
+  <p class="note">点が実測、太線が7日移動平均。<strong>判定に使うのは移動平均のほうです。</strong>単日の増減は水分で±1kg動きます。</p>
+  <h2>ウエスト（臍） 直近12週</h2>
+  <svg class="chart" id="chWaist" viewBox="0 0 340 150" role="img" aria-label="ウエスト推移"></svg>
+  <p class="note">週1回の計測値をつないだ線。リコンプでは体重が動かなくても、ここが細ればうまくいっています。</p>
+  <h2>蛋白質 直近30日</h2>
+  <svg class="chart" id="chP" viewBox="0 0 340 120" role="img" aria-label="蛋白質推移"></svg>
+  <h2>総挙上量 直近30日</h2>
+  <svg class="chart" id="chVol" viewBox="0 0 340 120" role="img" aria-label="総挙上量推移"></svg>
+  <p class="note">総挙上量＝重量×回数の合計。體躯之暦 第四部の中断判定は「種目別の重量が2週連続低下」ですが、全体の傾向はこの棒で掴めます。</p>
+  <h2>試算 — もし続けたら</h2>
+  <div class="add">
+    <select id="simAct"></select>
+    <div class="add-row">
+      <input type="number" id="simDelta" step="50" inputmode="numeric" placeholder="±kcal/日（例 -500）">
+      <input type="number" id="simDays" step="1" min="1" inputmode="numeric" placeholder="日数（例 28）">
+    </div>
+    <div class="pv" id="simOut">活動量を選び、±kcalと日数を入れると推定が出ます</div>
+  </div>
+  <p class="note">既製の5択は64kg基準の概算。「計算値」の2択は、手動の代謝計算に入力した歩数・通勤・仕事・筋トレから算出した値です。脂肪1kg≒7,200kcalで換算し、推定には±20%の幅を付けています。減量初週の水分・グリコーゲン変動（−1〜2kg）は脂肪とは別で、ここには含みません。</p>
+  <h2>控えと持ち出し</h2>
+  <p class="note" id="bkNote"></p>
+  <button class="btn-wide" id="btnBackup">控えを1タップで保存（ファイル）</button>
+  <button class="btn-ghost" id="btnCopy">控えをコピー</button>
+  <button class="btn-ghost" id="btnExport">記録を書き出す（下の枠に出力）</button>
+  <button class="btn-ghost" id="btnImport">枠の内容を読み込む</button>
+  <textarea id="io" placeholder="ここに記録のバックアップが出力されます。別の端末で使うときは、この文字列を貼り付けて読み込んでください。"></textarea>
+  <p class="note">記録はこの端末の中だけに保存されます。<b>毎日開いている限り、勝手に消えることはありません。</b>控えが要るのは①ブラウザのデータを消去したとき②機種変更③1週間以上まったく開かなかったとき（iOSは未訪問が続くと保存領域を整理することがあります）。<br><b>毎月15日</b>に保存してください。15日を過ぎて未保存だと、記録タブの先頭に赤い帯が出ます。<b>アプリ本体を更新する直前</b>にも必ず一度。</p>
+</div>
+
+<footer>
+  数値は日本食品標準成分表2020年版（八訂）に基づく概算。部位・調理法により±10〜15%変動します。<br>
+  「料理 自炊十種」は體躯之暦の献立例と同じ数値。「外食・中食 概算」は店舗・盛り付けで±20%以上ぶれるため目安のみ。<br>
+  蛋白目標は体重×2.4≒150g固定、<b>最低ラインは体重×1.8</b>（減量中に除脂肪を守るための下限）。脂質は総カロリーの22%、炭水化物は残余で自動算出。<br>
+  「鍛錬」タブの訓練記録も同じ保存領域に入り、書き出し・読み込みに含まれます。Hevy等の外部アプリから過去データを取り込むことはできません。<br>
+  計量之器 ／ 令和八年 七月 二十六日
+</footer>
+</div>
+<script>
+var DB={
+ "蛋白源":[
+  ["鶏むね 皮なし",108,23.3,1.9,0.1,null],
+  ["鶏ささみ",98,23.9,0.8,0.1,null],
+  ["鶏むね 皮つき",133,21.3,5.9,0.1,null],
+  ["鶏もも 皮なし",113,19.0,5.0,0,null],
+  ["鶏もも 皮つき",190,16.6,14.2,0,null],
+  ["豚こま（もも）",171,20.5,10.2,0.2,null],
+  ["豚こま（肩ロース）",237,17.1,19.2,0.1,null],
+  ["豚ヒレ",118,22.2,3.7,0.3,null],
+  ["牛もも 赤身",176,21.2,9.6,0.5,null],
+  ["サバ水煮缶",174,20.9,10.7,0.2,[["1缶",140]]],
+  ["ツナ水煮缶",71,16.0,0.7,0.2,[["1缶",70]]],
+  ["鮭",124,22.3,4.1,0.1,[["1切",80]]],
+  ["まぐろ 赤身",115,26.4,0.4,0.1,[["刺身1人前",100]]],
+  ["かつお 秋どり",150,25.0,6.2,0.2,[["刺身1人前",100]]],
+  ["まさば 生",211,20.6,16.8,0.3,[["半身",100]]],
+  ["さんま",287,18.1,25.6,0.1,[["1尾可食",100]]],
+  ["ぶり",222,21.4,17.6,0.3,[["1切",80]]],
+  ["たら",72,17.6,0.2,0.1,[["1切",80]]],
+  ["かれい",89,19.6,1.3,0.1,[["1切",100]]],
+  ["いわし 丸干し",177,32.8,5.5,0.7,[["1尾",30]]],
+  ["ほっけ 開き干し",161,20.6,9.4,0.1,[["半身",120]]],
+  ["しらす干し 半乾燥",187,40.5,3.5,0.5,[["大さじ1",5],["30g",30]]],
+  ["ちくわ",121,12.2,2.0,13.5,[["1本",30]]],
+  ["かまぼこ",93,12.0,0.9,9.7,[["1切",15]]],
+  ["はんぺん",93,9.9,1.0,11.4,[["1枚",100]]],
+  ["さつま揚げ",135,12.5,3.7,13.9,[["1枚",60]]],
+  ["いか",76,17.9,0.8,0.1,[["1杯可食",180]]],
+  ["えび バナメイ",82,19.6,0.6,0.7,[["5尾",75]]],
+  ["ほたて 貝柱",82,16.9,0.3,3.5,[["3個",60]]],
+  ["サバ味噌煮缶",210,16.3,13.9,6.6,[["1缶",190]]],
+  ["いわし水煮缶",168,20.7,10.6,0.1,[["1缶",150]]],
+  ["ツナ油漬缶",265,17.7,21.7,0.1,[["1缶",70]]],
+  ["鮭水煮缶",156,21.2,8.5,0.1,[["1缶",180]]],
+  ["ギリシャヨーグルト 無脂肪",59,10.2,0.0,3.9,[["1個",100],["2個",200]]],
+  ["ヨーグルト 無糖",56,3.6,3.0,4.9,[["100g",100],["200g",200]]],
+  ["カッテージチーズ",99,13.3,4.5,1.9,[["50g",50]]],
+  ["プロセスチーズ",313,22.7,26.0,0.1,[["1個",18]]],
+  ["高野豆腐 乾",496,50.2,34.1,4.2,[["1枚",17]]],
+  ["厚揚げ",143,10.7,11.3,0.9,[["1/2枚",100]]],
+  ["油揚げ",377,23.4,34.4,0.4,[["1枚",30]]],
+  ["豆乳 無調整",44,3.6,2.0,3.1,[["200ml",206]]],
+  ["枝豆 ゆで",118,11.5,6.1,8.9,[["100g",100]]],
+  ["ミックスナッツ 無塩",607,20.0,54.0,20.0,[["30g",30]]],
+  ["卵",142,12.2,10.2,0.4,[["1個",50],["2個",100]]],
+  ["木綿豆腐",73,7.0,4.9,0.4,[["1/2丁",150]]],
+  ["絹ごし豆腐",56,5.3,3.5,1.1,[["1/2丁",150]]],
+  ["納豆",190,16.5,10.0,5.4,[["1P",45]]],
+  ["ホエイ X-PLOSION",387,70.0,6.3,14.7,[["30g",30],["60g",60]]],
+  ["牛乳",61,3.3,3.8,4.8,[["200ml",206]]]
+ ],
+ "主食・補食":[
+  ["ご飯 白米",156,2.5,0.3,35.6,[["150g",150],["200g",200],["250g",250],["300g",300]]],
+  ["ご飯 玄米",152,2.8,1.0,34.2,[["200g",200],["300g",300]]],
+  ["切り餅",223,4.0,0.6,50.3,[["1個",50],["2個",100]]],
+  ["オートミール",350,13.7,5.7,59.7,[["30g",30],["50g",50]]],
+  ["バナナ",93,1.1,0.2,21.4,[["1本",90]]],
+  ["食パン",248,8.9,4.1,42.2,[["6枚切1枚",60]]],
+  ["うどん 茹で",95,2.6,0.4,20.3,[["1玉",230]]],
+  ["そば 茹で",130,4.8,1.0,24.0,[["1玉",180]]],
+  ["パスタ 茹で",150,5.8,0.9,28.4,null],
+  ["さつまいも",126,1.2,0.2,29.2,null],
+  ["じゃがいも",59,1.8,0.1,8.4,[["1個",130]]]
+ ],
+ "野菜・きのこ":[
+  ["キャベツ",21,1.3,0.2,3.4,[["100g",100],["150g",150]]],
+  ["玉ねぎ",33,1.0,0.1,6.9,[["1/2個",100]]],
+  ["にんじん",30,0.7,0.2,6.3,[["1/2本",80]]],
+  ["ピーマン",20,0.9,0.2,3.0,[["1個",35]]],
+  ["オクラ",26,2.1,0.2,1.6,[["5本",40],["100g",100]]],
+  ["パプリカ",28,1.0,0.2,5.6,[["1/2個",70],["1個",140]]],
+  ["ほうれん草",18,2.2,0.4,0.3,[["1束",200]]],
+  ["小松菜",13,1.5,0.2,0.5,[["1束",200]]],
+  ["ブロッコリー",37,5.4,0.6,2.3,[["100g",100]]],
+  ["白菜",13,0.8,0.1,1.9,[["200g",200]]],
+  ["レタス",11,0.6,0.1,1.7,[["2枚",60],["1/4玉",100]]],
+  ["もやし",15,1.7,0.1,1.3,[["1袋",200]]],
+  ["大根",15,0.4,0.1,2.7,[["200g",200]]],
+  ["長ねぎ",35,1.4,0.1,5.8,[["1/2本",50]]],
+  ["しめじ",22,2.7,0.5,1.3,[["1P",100]]],
+  ["まいたけ",22,2.0,0.5,0.9,[["1P",100]]],
+  ["えのき",34,2.7,0.2,3.7,[["1袋",100]]],
+  ["キウイ",51,1.0,0.2,10.8,[["1個",85]]]
+ ],
+ "料理 自炊十種":[
+  ["① 鶏むねとキャベツのレンジ蒸し",243,44.5,3.8,8.8,null,true],
+  ["② 鶏むねとピーマンの塩炒め",277,43.7,7.7,8.7,null,true],
+  ["③ 鶏むねとほうれん草の卵炒め",302,44.5,12.6,1.0,null,true],
+  ["④ 鶏むねと根菜のポトフ",283,45.6,4.0,17.2,null,true],
+  ["⑤ 鶏ももと玉ねぎ・きのこの照り煮",278,33.5,8.4,16.9,null,true],
+  ["⑥ 豚こまと白菜の重ね蒸し",328,29.3,18.3,7.0,null,true],
+  ["⑦ 豚こまともやしのポン酢蒸し",336,31.7,18.4,6.3,null,true],
+  ["⑧ 豚こまと大根の煮物",330,28.2,18.3,8.9,null,true],
+  ["⑨ 豆腐と豚こまのチャンプルー",483,40.3,31.2,6.1,null,true],
+  ["⑩ サバ水煮と大根のみぞれ煮",291,30.5,15.3,8.6,null,true]
+ ],
+ "外食・中食 概算":[
+  ["親子丼（ご飯250g込）",720,32,14,105,null,true],
+  ["牛丼 並",700,20,20,105,null,true],
+  ["生姜焼き定食",900,35,35,105,null,true],
+  ["焼き魚定食",650,35,18,85,null,true],
+  ["ラーメン 醤油",500,20,15,65,null,true],
+  ["カレーライス",750,15,20,120,null,true],
+  ["サラダチキン 1個",115,24,1.5,0.3,null,true],
+  ["おにぎり 1個",180,4,0.5,38,null,true]
+ ],
+ "調味・海藻・その他":[
+  ["焼き海苔",297,41.4,3.7,8.3,[["1枚",3]]],
+  ["カットわかめ 乾",186,18.0,4.0,2.9,[["2g",2]]],
+  ["味噌",182,12.5,6.0,17.0,[["汁1杯 18g",18],["15g",15]]],
+  ["調理油",921,0,100,0,[["小さじ1",4],["大さじ1",12]]],
+  ["マヨネーズ",668,1.4,72.5,2.1,[["大さじ1",12]]],
+  ["ポン酢",47,3.7,0,7.4,[["大さじ1",15]]],
+  ["めんつゆ 3倍",98,4.5,0,17.6,[["大さじ1",18]]]
+ ]
+};
+(function(){
+"use strict";
+var PHASES=[
+ {k:"p1",n:"一 削ぎ前段",tr:1800,rs:1500},
+ {k:"p2",n:"二 削ぎ後段",tr:1900,rs:1600},
+ {k:"p3",n:"三 検分",tr:2300,rs:2000},
+ {k:"p4",n:"四 増築一",tr:2550,rs:2250},
+ {k:"p5",n:"五 削整一",tr:1850,rs:1450},
+ {k:"p6",n:"六 増築二",tr:2550,rs:2250},
+ {k:"p7",n:"七 削整二",tr:1850,rs:1450},
+ {k:"p8",n:"八 年次検分",tr:2300,rs:2000}
+];
+var P_TARGET=150, F_RATIO=0.22, KEY="keiryo:all";
+var FIXED=[["ホエイ X-PLOSION",60],["卵",50],["納豆",45],["焼き海苔",3],["カットわかめ 乾",2],["味噌",18]];
+var EXDB=["ディップス","インクラインダンベルプレス","サイドレイズ","ダンベルカール","ルーマニアンデッドリフト","レッグカール","ヒップアブダクター","スタンディングカーフレイズ","ラットプルダウン","チンニング","シーテッドロウ","フェイスプル","トライセプスプレスダウン","スクワット","レッグプレス","レッグエクステンション","ヒップアダクター","シーテッドカーフレイズ","ヒップスラスト","ベンチプレス","ショルダープレス","ケーブルクランチ","ハンギングレッグレイズ","プランク","高インクラインダンベルプレス","ワンハンドダンベルロウ","リバースフライ","プッシュアップ・プラス","ケーブルフライ","ランドマインプレス","Yレイズ","チェストサポーテッドロウ","ハンマーカール","オーバーヘッドトライセプス","ケーブルロー","ダンベルベンチプレス","ダンベルフライ","インクラインダンベルフライ","ライイングトライセプスエクステンション","ゴブレットスクワット","ブルガリアンスクワット","ダンベルランジ","シングルレッグRDL","片脚スタンディングカーフレイズ","ダンベルクランチ","レッグレイズ","ダンベルプルオーバー","インクラインYレイズ"];
+var ROUTINES=[
+ {k:"tue",n:"火 A 押し",ex:[["ダンベルベンチプレス","4×8–12 R2 休3分"],["インクラインダンベルプレス","3×8–12 R1–2 休2分"],["ダンベルフライ","3×12–15 R0–1 休90秒"],["サイドレイズ","4×12–20 R0–1 休90秒"],["ライイングトライセプスエクステンション","3×10–15 R0–1 休90秒"]]},
+ {k:"wed",n:"水 B 脚",ex:[["ゴブレットスクワット","4×10–15 R2 休3分"],["ブルガリアンスクワット","3×10–12 R1–2 休2分"],["ルーマニアンデッドリフト","3×8–12 R2 休3分"],["ヒップスラスト","3×10–15 R1 休2分"],["片脚スタンディングカーフレイズ","4×10–15 R0–1 休90秒"],["ダンベルクランチ","3×10–15 R0–1 休60秒"]]},
+ {k:"thu",n:"木 C 引き",ex:[["ワンハンドダンベルロウ","4×8–12 R1–2 休2分"],["チェストサポーテッドロウ","3×10–15 R1–2 休2分"],["ダンベルプルオーバー","3×10–15 R1–2 休90秒"],["リバースフライ","4×15–20 R0–1 休90秒"],["ダンベルカール","3×8–12 R0–1 休90秒"],["ハンマーカール","2×10–15 R0–1 休90秒"]]},
+ {k:"park",n:"公園 P 懸垂（土か日）",ex:[["懸垂","4セット R0–1 休3分"],["ハンギングレッグレイズ","3×10–15 R0–1 休60秒"]]},
+ {k:"sat",n:"土 D 肩腕",ex:[["高インクラインダンベルプレス","3×8–12 R1–2 休2分"],["サイドレイズ","4×12–20 R0–1 休90秒"],["インクラインYレイズ","3×12–15 R0–1 休90秒"],["インクラインダンベルフライ","3×12–15 R0–1 休90秒"],["オーバーヘッドトライセプス","3×10–15 R0–1 休90秒"]]},
+ {k:"sun",n:"日 E 脚2",ex:[["ルーマニアンデッドリフト","4×8–12 R1–2 休3分"],["シングルレッグRDL","3×10–12 R1–2 休2分"],["ダンベルランジ","3×10–12 R1–2 休2分"],["シーテッドカーフレイズ","5×12–20 R0–1 休90秒"],["プッシュアップ・プラス","2×10–15 R0–1 休45–60秒"]]}
+];
+
+var DATA={}, cur=ymd(new Date()), calM=new Date(), mode="mem", memBox={};
+function $(i){return document.getElementById(i);}
+function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function parseYmd(s){var a=s.split("-");return new Date(+a[0],+a[1]-1,+a[2]);}
+function shift(s,n){var d=parseYmd(s);d.setDate(d.getDate()+n);return ymd(d);}
+
+/* ---- 保存層：window.storage → localStorage → メモリ ---- */
+function loadRaw(){
+  if(window.storage&&window.storage.get){
+    return window.storage.get(KEY).then(function(r){mode="cloud";return r&&r.value?r.value:null;})
+      .catch(function(){return lsGet();});
+  }
+  return Promise.resolve(lsGet());
+}
+function lsGet(){
+  try{ var v=window.localStorage.getItem(KEY); mode="local"; return v; }
+  catch(e){ mode="mem"; return memBox[KEY]||null; }
+}
+function saveRaw(v){
+  if(window.storage&&window.storage.set){
+    window.storage.set(KEY,v).catch(function(){lsSet(v);}); 
+    lsSet(v); return;
+  }
+  lsSet(v);
+}
+function lsSet(v){ try{ window.localStorage.setItem(KEY,v); }catch(e){ memBox[KEY]=v; } }
+function save(){ saveRaw(JSON.stringify(DATA)); }
+
+function rec(d){
+  if(!DATA[d]){
+    var sc=sched(d);
+    DATA[d]={phase:sc?sc.phase:"p2",day:sc?sc.day:"tr",items:[],w:null,train:[]};
+  }
+  if(!DATA[d].train) DATA[d].train=[];
+  return DATA[d];
+}
+function meta(){ if(!DATA._meta)DATA._meta={ex:[]}; if(!DATA._meta.ex)DATA._meta.ex=[]; return DATA._meta; }
+function mine(){ var m=meta(); if(!m.mine)m.mine={}; return m.mine; }
+function fixed(){ var m=meta(); if(!m.fixed)m.fixed=FIXED.map(function(f){return [f[0],f[1]];}); return m.fixed; }
+function mergeMine(){
+  var mn=mine(), ks=Object.keys(mn);
+  if(!ks.length){ delete DB["自作"]; return; }
+  DB["自作"]=ks.map(function(n){
+    var v=mn[n], isD=!!v[4];
+    return [n,v[0],v[1],v[2],v[3], isD?null:[["50g",50],["100g",100],["150g",150]], isD];
+  });
+}
+function vol(r){
+  var v=0;
+  ((r&&r.train)||[]).forEach(function(e){(e.sets||[]).forEach(function(s){ if(s.w&&s.r)v+=s.w*s.r; });});
+  return v;
+}
+function lastPerf(name){
+  var ks=Object.keys(DATA).filter(function(k){return /^\d{4}-\d{2}-\d{2}$/.test(k)&&k<cur&&DATA[k].train&&DATA[k].train.length;}).sort().reverse();
+  for(var i=0;i<ks.length;i++){
+    var tr=DATA[ks[i]].train;
+    for(var j=0;j<tr.length;j++){
+      if(tr[j].ex===name){
+        var ss=(tr[j].sets||[]).filter(function(s){return s.w!=null&&s.r!=null;});
+        if(!ss.length)break;
+        return ks[i].slice(5)+"　"+ss.map(function(s){return s.w+"×"+s.r;}).join("  ");
+      }
+    }
+  }
+  return null;
+}
+function ovr(){ var m=meta(); if(!m.food)m.food={}; return m.food; }
+function applyOvr(f){
+  if(!f)return f;
+  var o=ovr()[f[0]]; if(!o)return f;
+  return [f[0],o[0],o[1],o[2],o[3],f[5],f[6]];
+}
+function kiku(f){
+  var g = f[6] ? 100 : (f[5] && f[5][0] ? f[5][0][1] : 100);
+  var q = g/100;
+  return (f[1]*q >= 50) || (f[3]*q >= 4) || (f[2]*q >= 5) || (f[4]*q >= 10);
+}
+function find(name){for(var c in DB){for(var i=0;i<DB[c].length;i++){if(DB[c][i][0]===name)return applyOvr(DB[c][i]);}}return null;}
+function targets(r){
+  var k;
+  if(r.phase==="man"){
+    k=(r.mk&&r.mk>0)?r.mk:(r.day==="tr"?2300:2000);
+  }else{
+    var ph=PHASES[1];
+    for(var i=0;i<PHASES.length;i++){if(PHASES[i].k===r.phase)ph=PHASES[i];}
+    k=r.day==="tr"?ph.tr:ph.rs;
+  }
+  var f=Math.round(k*F_RATIO/9);
+  return {kcal:k,p:P_TARGET,f:f,c:Math.round((k-P_TARGET*4-f*9)/4)};
+}
+function totals(r){
+  var t={kcal:0,p:0,f:0,c:0};
+  (r.items||[]).forEach(function(it){
+    var f=find(it.n); if(!f)return; var q=it.g/100;
+    t.kcal+=f[1]*q; t.p+=f[2]*q; t.f+=f[3]*q; t.c+=f[4]*q;
+  });
+  return t;
+}
+function meter(lb,c,t,u,isP,kpg){
+  var pct=t>0?Math.min(100,c/t*100):0, cls=isP?"p":"";
+  if(isP){ if(c>=t)cls+=" ok"; } else { if(c>t*1.03)cls+=" over"; else if(c>=t*0.95)cls+=" ok"; }
+  var rm=t-c, rt=rm>=0?("残 "+Math.round(rm)+u):("超過 "+Math.round(-rm)+u);
+  var kc="";
+  if(kpg){ kc=' <span class="kc">'+Math.round(c*kpg)+' / '+Math.round(t*kpg)+' kcal</span>'; }
+  return '<div class="mrow"><div class="mtop"><span class="lb">'+lb+'</span><span class="vl"><b>'+
+    Math.round(c)+'</b> / '+t+u+kc+' <span class="rem">'+rt+'</span></span></div>'+
+    '<div class="track '+cls+'"><i style="width:'+pct+'%"></i></div></div>';
+}
+function render(){
+  var r=rec(cur), tg=targets(r), tt=totals(r);
+  $("curDate").textContent=cur;
+  var pmin=Math.round(latestW()*1.8);
+  $("meters").innerHTML=meter("カロリー",tt.kcal,tg.kcal," kcal",false)+meter("蛋白質 P",tt.p,tg.p," g",true,4)+
+    '<p class="note" style="margin:-4px 0 10px">蛋白の<b>最低ライン '+pmin+'g</b>（体重×1.8）。目標'+tg.p+'gに届かない日でもここは割らないこと。'+
+    (tt.p<pmin?' <b style="color:#9B4B3F">現在 '+Math.round(tt.p)+'g ／ あと '+Math.ceil(pmin-tt.p)+'g</b>':' <b style="color:#5E7A54">最低ラインは満たしています</b>')+'</p>'+
+    meter("脂質 F",tt.f,tg.f," g",false,9)+meter("炭水化物 C",tt.c,tg.c," g",false,4);
+  $("inpW").value=r.w==null?"":r.w;
+  var man=r.phase==="man";
+  $("mkRow").classList.toggle("hide",!man);
+  $("mkNote").classList.toggle("hide",!man);
+  $("inpMK").value=(man&&r.mk)?r.mk:"";
+  $("btnMkCalc").classList.toggle("hide",!man);
+  if(!man)$("mkCalc").classList.add("hide");
+  var sc=sched(cur);
+  renderDuty(r,sc);
+  var photoDay=!!(sc&&sc.photo)||!!r.photo;
+  $("photoCard").classList.toggle("hide",!photoDay);
+  $("btnPhoto").textContent=r.photo?"撮影済み ✓（押すと取り消し）":"撮影を記録する";
+  $("bfRow").classList.toggle("hide",!((sc&&sc.bcomp)||r.bf!=null));
+  $("inpBFd").value=r.bf==null?"":r.bf;
+  var hasMeas=!!(r.meas&&(r.meas.wa!=null||r.meas.ar!=null||r.meas.th!=null||r.meas.ca!=null));
+  var showMeas=!!(sc&&sc.meas)||hasMeas||measOpen;
+  $("measH").classList.toggle("hide",!showMeas);
+  $("measBox").classList.toggle("hide",!showMeas);
+  $("btnMeas").classList.toggle("hide",showMeas);
+  var mm=r.meas||{};
+  $("inpWa").value=mm.wa==null?"":mm.wa;
+  $("inpAr").value=mm.ar==null?"":mm.ar;
+  $("inpTh").value=mm.th==null?"":mm.th;
+  $("inpCa").value=mm.ca==null?"":mm.ca;
+  var ul=$("list"); ul.innerHTML="";
+  $("empty").style.display=(r.items&&r.items.length)?"none":"block";
+  (r.items||[]).forEach(function(it,idx){
+    var f=find(it.n); if(!f)return; var q=it.g/100;
+    var li=document.createElement("li");
+    var lbl=f[6]?((it.g/100)+"皿"):(it.g+"g");
+    li.innerHTML='<span class="nm">'+it.n+'<small>'+lbl+' ／ P'+(f[2]*q).toFixed(1)+' F'+(f[3]*q).toFixed(1)+' C'+(f[4]*q).toFixed(1)+'</small></span>'+
+      '<span class="kc">'+Math.round(f[1]*q)+' kcal</span>';
+    var b=document.createElement("button"); b.className="del"; b.textContent="×";
+    b.setAttribute("aria-label",it.n+"を削除");
+    b.onclick=function(){ r.items.splice(idx,1); save(); render(); };
+    li.appendChild(b); ul.appendChild(li);
+  });
+  buildSegs();
+}
+function buildSegs(){
+  var r=rec(cur), sp=$("segPhase"); sp.innerHTML="";
+  PHASES.forEach(function(p){
+    var b=document.createElement("button"); b.textContent=p.n;
+    b.setAttribute("aria-pressed",r.phase===p.k);
+    b.onclick=function(){ r.phase=p.k; save(); render(); };
+    sp.appendChild(b);
+  });
+  var bm=document.createElement("button"); bm.textContent="手動";
+  bm.setAttribute("aria-pressed",r.phase==="man");
+  bm.onclick=function(){ var t=targets(r); r.phase="man"; if(!r.mk)r.mk=t.kcal; save(); render(); };
+  sp.appendChild(bm);
+  var sd=$("segDay"); sd.innerHTML="";
+  [["tr","訓練日"],["rs","休息日"]].forEach(function(d){
+    var b=document.createElement("button"); b.textContent=d[1];
+    b.setAttribute("aria-pressed",r.day===d[0]);
+    b.onclick=function(){ r.day=d[0]; save(); render(); };
+    sd.appendChild(b);
+  });
+}
+/* ---- 食材選択 ---- */
+function buildCats(){
+  var sc=$("selCat"); sc.innerHTML="";
+  Object.keys(DB).forEach(function(c){var o=document.createElement("option");o.value=c;o.textContent=c;sc.appendChild(o);});
+  sc.onchange=buildFoods; buildFoods();
+}
+function buildFoods(){
+  var cat=$("selCat").value||Object.keys(DB)[0]; if(!DB[cat])return;
+  var sf=$("selFood"); sf.innerHTML="";
+  DB[cat].forEach(function(f0){
+    var f=applyOvr(f0), edited=!!ovr()[f0[0]];
+    var o=document.createElement("option"); o.value=f[0];
+    o.textContent=(kiku(f)?"◆ ":"")+f[0]+(edited?" ＊":"")+" ｜"+f[1]+"k P"+f[2]+" F"+f[3]+" C"+f[4]+(f[6]?"／皿":"");
+    sf.appendChild(o);
+  });
+  sf.onchange=buildChips; buildChips();
+}
+function curFood(){
+  var cat=$("selCat").value||Object.keys(DB)[0];
+  return find($("selFood").value)||(DB[cat]&&applyOvr(DB[cat][0]));
+}
+function buildChips(){
+  var f=curFood(), cw=$("chips"); if(!cw)return; cw.innerHTML="";
+  var isDish=!!(f&&f[6]), inp=$("inpG");
+  inp.placeholder=isDish?"皿数（1 ＝ 一皿）":"グラム";
+  inp.step=isDish?"0.5":"1";
+  var pre=isDish?[["半分",0.5],["1皿",1],["1.5皿",1.5],["2皿",2]]:((f&&f[5])?f[5]:[["50g",50],["100g",100],["150g",150]]);
+  pre.forEach(function(pr){
+    var b=document.createElement("button"); b.textContent=pr[0];
+    b.onclick=function(){ inp.value=pr[1]; preview(); };
+    cw.appendChild(b);
+  });
+  preview();
+  var fe=$("foodEdit"); if(fe&&fe.classList&&!fe.classList.contains("hide"))fillFoodEdit();
+}
+function fillFoodEdit(){
+  var f=curFood(); if(!f)return;
+  var edited=!!ovr()[f[0]];
+  $("feName").innerHTML="<b>"+f[0]+"</b> ／ "+(f[6]?"1皿あたり":"100gあたり")+(edited?"　<b>＊書き換え済み</b>":"　（既定値）");
+  $("feK").value=f[1]; $("feP").value=f[2]; $("feF").value=f[3]; $("feC").value=f[4];
+}
+function preview(){
+  var pv=$("pv"); if(!pv)return;
+  var f=curFood(), v=parseFloat($("inpG").value);
+  if(!f||!v||v<=0){ pv.textContent="数量を入れると内訳が出ます"; return; }
+  var q=(f[6]?v*100:v)/100;
+  pv.innerHTML="→ <b>"+Math.round(f[1]*q)+"</b> kcal ／ P "+(f[2]*q).toFixed(1)+" ・ F "+(f[3]*q).toFixed(1)+" ・ C "+(f[4]*q).toFixed(1)+" g";
+}
+/* ---- 暦 ---- */
+function dayClass(d){
+  var r=DATA[d]; if(!r||!r.items||!r.items.length)return "";
+  var t=totals(r).kcal, g=targets(r).kcal;
+  if(t>g*1.05)return "ov"; if(t<g*0.95)return "un"; return "ok";
+}
+function drawCal(){
+  var y=calM.getFullYear(), m=calM.getMonth();
+  $("calTitle").textContent=y+"年 "+(m+1)+"月";
+  var g=$("calGrid"); g.innerHTML="";
+  ["日","月","火","水","木","金","土"].forEach(function(w){
+    var e=document.createElement("div"); e.className="dow"; e.textContent=w; g.appendChild(e);
+  });
+  var first=new Date(y,m,1).getDay(), last=new Date(y,m+1,0).getDate(), tk=ymd(new Date());
+  for(var i=0;i<first;i++){var b=document.createElement("div");b.className="cell blank";g.appendChild(b);}
+  for(var d=1;d<=last;d++){
+    var key=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    var c=document.createElement("div");
+    c.className="cell"+(key===tk?" today":"")+(key===cur?" sel":"");
+    var kc=DATA[key]&&DATA[key].items&&DATA[key].items.length?Math.round(totals(DATA[key]).kcal):null;
+    var trd=vol(DATA[key])>0;
+    var sc=sched(key), mks="";
+    if(sc){
+      var mk=function(flag,ch,done){
+        if(!flag)return;
+        var col=done?"#56684A":(key<tk?"#8C3A3A":"#A8813C");
+        mks+='<i class="mk" style="color:'+col+'">'+ch+'</i>';
+      };
+      mk(sc.photo,"写",!!(DATA[key]&&DATA[key].photo));
+      mk(sc.meas,"測",!!(DATA[key]&&DATA[key].meas&&DATA[key].meas.wa!=null));
+      mk(sc.bcomp,"組",!!(DATA[key]&&DATA[key].bf!=null));
+    }
+    c.innerHTML='<span class="dn">'+d+mks+'</span><span class="dot '+dayClass(key)+'"></span>'+
+      '<span class="wk">'+(trd?'<b style="color:#56684A">▲</b>':'')+(kc?kc:"")+'</span>';
+    (function(k){ c.onclick=function(){ cur=k; render(); show("rec"); }; })(key);
+    g.appendChild(c);
+  }
+}
+/* ---- 図 ---- */
+function series(n){
+  var out=[], t=ymd(new Date());
+  for(var i=n-1;i>=0;i--){
+    var k=shift(t,-i), r=DATA[k];
+    var tv=vol(r);
+    out.push({d:k, kcal:r&&r.items&&r.items.length?totals(r).kcal:null,
+      p:r&&r.items&&r.items.length?totals(r).p:null,
+      tg:r?targets(r).kcal:null, w:r&&r.w!=null?r.w:null, vol:tv>0?tv:null,
+      wa:r&&r.meas&&r.meas.wa!=null?r.meas.wa:null});
+  }
+  return out;
+}
+function svgBars(id,rows,valKey,tgKey,color){
+  var W=340,H=(id==="chP"||id==="chVol")?120:150,PL=34,PR=6,PT=10,PB=18;
+  var vals=rows.map(function(r){return r[valKey];}).filter(function(v){return v!=null;});
+  var tgs=tgKey?rows.map(function(r){return r[tgKey];}).filter(function(v){return v!=null;}):[];
+  var mx=Math.max.apply(null,vals.concat(tgs).concat([1]))*1.15;
+  var w=(W-PL-PR)/rows.length, s="";
+  s+='<line x1="'+PL+'" y1="'+(H-PB)+'" x2="'+(W-PR)+'" y2="'+(H-PB)+'" stroke="#C8BFAC"/>';
+  [0,.5,1].forEach(function(f){
+    var y=PT+(H-PT-PB)*(1-f);
+    s+='<line x1="'+PL+'" y1="'+y+'" x2="'+(W-PR)+'" y2="'+y+'" stroke="#C8BFAC" stroke-dasharray="2 3" opacity=".6"/>';
+    s+='<text x="'+(PL-4)+'" y="'+(y+3)+'" font-size="8" fill="#6B6259" text-anchor="end">'+Math.round(mx*f)+'</text>';
+  });
+  rows.forEach(function(r,i){
+    var v=r[valKey]; if(v==null)return;
+    var h=(H-PT-PB)*(v/mx), x=PL+i*w+w*0.18, bw=Math.max(1.6,w*0.64);
+    s+='<rect x="'+x.toFixed(1)+'" y="'+(H-PB-h).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" fill="'+color+'" rx="1"/>';
+  });
+  if(tgKey){
+    var pts=[];
+    rows.forEach(function(r,i){
+      if(r[tgKey]==null)return;
+      var y=H-PB-(H-PT-PB)*(r[tgKey]/mx);
+      pts.push((PL+i*w+w/2).toFixed(1)+","+y.toFixed(1));
+    });
+    if(pts.length)s+='<polyline points="'+pts.join(" ")+'" fill="none" stroke="#6B6259" stroke-width="1.4" stroke-dasharray="4 3"/>';
+  }
+  s+='<text x="'+PL+'" y="'+(H-4)+'" font-size="8" fill="#6B6259">'+rows[0].d.slice(5)+'</text>';
+  s+='<text x="'+(W-PR)+'" y="'+(H-4)+'" font-size="8" fill="#6B6259" text-anchor="end">'+rows[rows.length-1].d.slice(5)+'</text>';
+  $(id).innerHTML=s;
+}
+function svgWeight(rows){
+  var W=340,H=150,PL=34,PR=6,PT=10,PB=18, id="chWeight";
+  var ws=rows.map(function(r){return r.w;}).filter(function(v){return v!=null;});
+  if(!ws.length){ $(id).innerHTML='<text x="12" y="78" font-size="11" fill="#6B6259">体重の記録がまだありません</text>'; return; }
+  var mn=Math.min.apply(null,ws)-0.6, mx=Math.max.apply(null,ws)+0.6, rg=mx-mn||1;
+  var w=(W-PL-PR)/rows.length, s="";
+  [0,.5,1].forEach(function(f){
+    var y=PT+(H-PT-PB)*(1-f);
+    s+='<line x1="'+PL+'" y1="'+y+'" x2="'+(W-PR)+'" y2="'+y+'" stroke="#C8BFAC" stroke-dasharray="2 3" opacity=".6"/>';
+    s+='<text x="'+(PL-4)+'" y="'+(y+3)+'" font-size="8" fill="#6B6259" text-anchor="end">'+(mn+rg*f).toFixed(1)+'</text>';
+  });
+  function yy(v){return H-PB-(H-PT-PB)*((v-mn)/rg);}
+  rows.forEach(function(r,i){
+    if(r.w==null)return;
+    s+='<circle cx="'+(PL+i*w+w/2).toFixed(1)+'" cy="'+yy(r.w).toFixed(1)+'" r="2" fill="#2C4A6B" opacity=".55"/>';
+  });
+  var pts=[];
+  rows.forEach(function(r,i){
+    var acc=[],cnt=0;
+    for(var j=Math.max(0,i-6);j<=i;j++){ if(rows[j].w!=null){acc.push(rows[j].w);cnt++;} }
+    if(cnt<2)return;
+    var avg=acc.reduce(function(a,b){return a+b;},0)/cnt;
+    pts.push((PL+i*w+w/2).toFixed(1)+","+yy(avg).toFixed(1));
+  });
+  if(pts.length)s+='<polyline points="'+pts.join(" ")+'" fill="none" stroke="#B03A28" stroke-width="2.2" stroke-linejoin="round"/>';
+  s+='<text x="'+PL+'" y="'+(H-4)+'" font-size="8" fill="#6B6259">'+rows[0].d.slice(5)+'</text>';
+  s+='<text x="'+(W-PR)+'" y="'+(H-4)+'" font-size="8" fill="#6B6259" text-anchor="end">'+rows[rows.length-1].d.slice(5)+'</text>';
+  $(id).innerHTML=s;
+}
+function drawWeeks(rows){
+  var r28=rows.slice(-28), names=["3週前","2週前","先週","今週（直近7日）"], html="";
+  for(var b=0;b<4;b++){
+    var blk=r28.slice(b*7,b*7+7);
+    var recd=blk.filter(function(x){return x.kcal!=null;});
+    var lbl=names[b];
+    if(!recd.length){
+      html+='<div class="wkrow"><div class="wkl"><span>'+lbl+'</span><span>記録なし</span></div>'+
+        '<div class="track"><i style="width:0%"></i></div></div>';
+      continue;
+    }
+    var si=0, st=0;
+    recd.forEach(function(x){ si+=x.kcal; st+=(x.tg||0); });
+    var pct=st>0?si/st*100:0;
+    var cls=""; if(pct>105)cls="over"; else if(pct>=95)cls="ok";
+    var diff=si-st, fat=diff/7200;
+    html+='<div class="wkrow"><div class="wkl"><span>'+lbl+'</span><span>記録 '+recd.length+'/7日</span></div>'+
+      '<div class="track '+cls+'"><i style="width:'+Math.min(100,pct).toFixed(0)+'%"></i></div>'+
+      '<div class="wkn">摂取 '+Math.round(si).toLocaleString()+' / 目標 '+Math.round(st).toLocaleString()+
+      ' ＝ <b>'+pct.toFixed(0)+'%</b>　収支 '+(diff<0?"−":"＋")+Math.abs(Math.round(diff)).toLocaleString()+
+      'kcal（脂肪 '+(fat<0?"−":"＋")+Math.abs(fat).toFixed(2)+'kg相当）</div></div>';
+  }
+  $("wkFul").innerHTML=html;
+}
+function svgWaist(rows){
+  var W=340,H=150,PL=34,PR=6,PT=10,PB=18,id="chWaist";
+  var pts=rows.map(function(r,i){return {i:i,v:r.wa};}).filter(function(x){return x.v!=null;});
+  if(pts.length<1){ $(id).innerHTML='<text x="12" y="78" font-size="11" fill="#6B6259">周径の記録がまだありません（週1回・同じ曜日に）</text>'; return; }
+  var vs=pts.map(function(x){return x.v;});
+  var mn=Math.min.apply(null,vs)-0.8, mx=Math.max.apply(null,vs)+0.8, rg=mx-mn||1;
+  var w=(W-PL-PR)/rows.length, sHtml="";
+  [0,.5,1].forEach(function(f){
+    var y=PT+(H-PT-PB)*(1-f);
+    sHtml+='<line x1="'+PL+'" y1="'+y+'" x2="'+(W-PR)+'" y2="'+y+'" stroke="#C8BFAC" stroke-dasharray="2 3" opacity=".6"/>';
+    sHtml+='<text x="'+(PL-4)+'" y="'+(y+3)+'" font-size="8" fill="#6B6259" text-anchor="end">'+(mn+rg*f).toFixed(1)+'</text>';
+  });
+  function yy(v){return H-PB-(H-PT-PB)*((v-mn)/rg);}
+  var line=[];
+  pts.forEach(function(x){
+    var cx=PL+x.i*w+w/2;
+    line.push(cx.toFixed(1)+","+yy(x.v).toFixed(1));
+    sHtml+='<circle cx="'+cx.toFixed(1)+'" cy="'+yy(x.v).toFixed(1)+'" r="2.5" fill="#2C4A6B"/>';
+  });
+  if(line.length>1)sHtml+='<polyline points="'+line.join(" ")+'" fill="none" stroke="#2C4A6B" stroke-width="1.6" stroke-linejoin="round"/>';
+  sHtml+='<text x="'+PL+'" y="'+(H-4)+'" font-size="8" fill="#6B6259">'+rows[0].d.slice(5)+'</text>';
+  sHtml+='<text x="'+(W-PR)+'" y="'+(H-4)+'" font-size="8" fill="#6B6259" text-anchor="end">'+rows[rows.length-1].d.slice(5)+'</text>';
+  $(id).innerHTML=sHtml;
+}
+function drawCharts(){
+  var rows84=series(84), rows=rows84.slice(-30);
+  drawWeeks(rows);
+  svgWaist(rows84);
+  svgBars("chKcal",rows,"kcal","tg","#2C4A6B");
+  svgWeight(rows);
+  svgBars("chP",rows,"p",null,"#A8813C");
+  svgBars("chVol",rows,"vol",null,"#56684A");
+  var last7=rows.slice(-7);
+  function avg(k){var a=last7.map(function(r){return r[k];}).filter(function(v){return v!=null;});
+    return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:null;}
+  var prev7=rows.slice(-14,-7);
+  function avgP(k){var a=prev7.map(function(r){return r[k];}).filter(function(v){return v!=null;});
+    return a.length?a.reduce(function(x,y){return x+y;},0)/a.length:null;}
+  var aw=avg("w"), pw=avgP("w"), ak=avg("kcal"), ap=avg("p");
+  var dw=(aw!=null&&pw!=null)?(aw-pw):null;
+  $("stats").innerHTML=
+    '<div><dt>週平均 体重</dt><dd>'+(aw!=null?aw.toFixed(2):"—")+'<small> kg</small></dd></div>'+
+    '<div><dt>前週比</dt><dd>'+(dw!=null?(dw>0?"+":"")+dw.toFixed(2):"—")+'<small> kg</small></dd></div>'+
+    '<div><dt>週平均 摂取</dt><dd>'+(ak!=null?Math.round(ak):"—")+'<small> kcal</small></dd></div>'+
+    '<div><dt>週平均 蛋白</dt><dd>'+(ap!=null?Math.round(ap):"—")+'<small> g</small></dd></div>';
+}
+/* ---- 代謝計算 ---- */
+function latestW(){
+  var ks=Object.keys(DATA).filter(function(k){return /^\d{4}-\d{2}-\d{2}$/.test(k)&&DATA[k].w!=null;}).sort();
+  return ks.length?DATA[ks[ks.length-1]].w:64.5;
+}
+function getProf(){
+  var d={w:latestW(),h:169,a:23,sex:"m",bf:null,bfm:"none",steps:8000,trn:5,trmin:60,cm:"trainSit",cmin:20,job:"sit"};
+  var m=meta(); if(!m.prof)return d;
+  for(var k in m.prof){ if(m.prof[k]!=null&&m.prof[k]!=="")d[k]=m.prof[k]; }
+  return d;
+}
+function calcTDEE(p){
+  var W=p.w||64,H=p.h||169,A=p.a||23;
+  var mif=10*W+6.25*H-5*A+(p.sex==="f"?-161:5);
+  var bmr=mif, basis="Mifflin";
+  if(p.bf>0&&p.bf<60){ bmr=370+21.6*W*(1-p.bf/100); basis="Katch"; }
+  var base=0.08*bmr;
+  var steps=(p.steps||0)/1000*0.35*W;
+  var jobAdd=({sit:0,half:80,stand:160,phys:400}[p.job]||0)*(W/64);
+  var cmNet=({walk:0,bike:3,trainStand:0.8,trainSit:0,car:0,home:0}[p.cm]||0);
+  var cmKcal=cmNet*3.5*W/200*((p.cmin||0)*2);
+  var trKcal=((p.trmin||0)*4*3.5*W/200)+25;
+  var rs=Math.round((bmr+base+steps+jobAdd+cmKcal)*1.1);
+  var tr=Math.round((bmr+base+steps+jobAdd+cmKcal+trKcal)*1.1);
+  var n=Math.min(7,Math.max(0,p.trn||0));
+  return {bmr:Math.round(bmr),basis:basis,tr:tr,rs:rs,avg:Math.round((tr*n+rs*(7-n))/7)};
+}
+var PROF_NUM=[["profW","w",parseFloat],["profH","h",parseFloat],["profA","a",parseInt],["profBF","bf",parseFloat],["profSteps","steps",parseInt],["profTrn","trn",parseInt],["profTrMin","trmin",parseInt],["profCmMin","cmin",parseInt]];
+var PROF_SEL=[["profSex","sex"],["profBFM","bfm"],["profCmMode","cm"],["profJob","job"]];
+function fillProf(){
+  var p=getProf();
+  PROF_NUM.forEach(function(f){ $(f[0]).value=(p[f[1]]==null?"":p[f[1]]); });
+  PROF_SEL.forEach(function(f){ $(f[0]).value=p[f[1]]; });
+  renderMkOut();
+}
+function readProf(){
+  var m=meta(); if(!m.prof)m.prof={};
+  PROF_NUM.forEach(function(f){
+    var v=f[2]($(f[0]).value);
+    m.prof[f[1]]=isFinite(v)?v:null;
+  });
+  PROF_SEL.forEach(function(f){ m.prof[f[1]]=$(f[0]).value; });
+  save();
+}
+function renderMkOut(){
+  var p=getProf(), t=calcTDEE(p);
+  var L=["基礎代謝 <b>"+t.bmr.toLocaleString()+"</b>（"+t.basis+"）",
+         "休息日 <b>"+t.rs.toLocaleString()+"</b> ・ 訓練日 <b>"+t.tr.toLocaleString()+"</b> ・ 週平均 "+t.avg.toLocaleString()+" kcal"];
+  if(t.basis==="Katch"&&p.bfm==="bia")L.push('<span style="color:#6B6259">BIAの体脂肪率は±3〜5%ぶれます。Katch値は目安。</span>');
+  if(p.cm==="walk")L.push('<span style="color:#6B6259">徒歩通勤：歩数側に含めてください（ここでは加算していません）。</span>');
+  $("mkCalcOut").innerHTML=L.join("<br>");
+}
+function applyMk(delta){
+  readProf();
+  var r=rec(cur), t=calcTDEE(getProf());
+  var base=(r.day==="tr")?t.tr:t.rs;
+  r.phase="man"; r.mk=base+delta;
+  save(); render(); renderMkOut(); buildSim();
+}
+/* ---- 計画・予定・務め ---- */
+function getPlan(){
+  var m=meta();
+  return {start:(m.plan&&m.plan.start)||null, measDow:(m.plan&&m.plan.measDow!=null)?m.plan.measDow:0};
+}
+function sched(ds){
+  var p=getPlan(); if(!p.start)return null;
+  var diff=Math.round((parseYmd(ds)-parseYmd(p.start))/86400000);
+  if(diff<0)return null;
+  var wk=Math.floor(diff/7)+1;
+  var ph=wk<=8?"p1":wk<=14?"p2":wk<=16?"p3":wk<=32?"p4":wk<=35?"p5":wk<=47?"p6":wk<=50?"p7":"p8";
+  var dow=parseYmd(ds).getDay();
+  return {week:wk,phase:ph,day:(dow===1||dow===5)?"rs":"tr",
+    meas:dow===p.measDow,photo:diff%28===0,
+    bcomp:[0,56,98,112,224,245,329,350].indexOf(diff)>=0,over:wk>52};
+}
+function phKind(k){
+  if(k==="p1"||k==="p2"||k==="p5"||k==="p7")return ["aka","脂肪を落とす期","赤字"];
+  if(k==="p4"||k==="p6")return ["kuro","筋を積む期","黒字"];
+  return ["iji","維持して測る期","±0"];
+}
+function renderNowPh(){
+  var el=$("nowPh"); if(!el)return;
+  var r=rec(cur), sc=sched(cur), t=targets(r);
+  var k=r.phase, nm=(k==="man")?"手動設定":phName(k);
+  var kd=(k==="man")?["iji","手で決めた目標","—"]:phKind(k);
+  var wk=sc?("第"+sc.week+"週"+(sc.over?"（満了）":"")):"開始日 未設定";
+  var day=(r.day==="tr")?"訓練日":"休息日";
+  var bal=(k==="man")?"":(function(){
+    var base=(r.day==="tr")?2300:2000, d=Math.round(t.kcal-base);
+    return d===0?"±0":(d>0?"＋"+d:"−"+(-d));
+  })();
+  el.className="nowph "+kd[0];
+  el.innerHTML='<span class="ttl">'+nm+'</span>'+
+    '<span class="sub">'+wk+' ／ '+kd[1]+(bal?'（消費との差 '+bal+' kcal）':'')+'</span>'+
+    '<span class="kc">今日は '+day+'　目標 <b>'+t.kcal.toLocaleString()+'</b> kcal ／ 蛋白 <b>'+t.p+'</b> g</span>';
+}
+function phName(k){
+  for(var i=0;i<PHASES.length;i++){if(PHASES[i].k===k)return PHASES[i].n;}
+  return "";
+}
+function streakDays(){
+  var ok=function(x){var r=DATA[x];return !!(r&&r.items&&r.items.length>0&&r.w!=null);};
+  var kk=ymd(new Date()), n=0;
+  if(!ok(kk))kk=shift(kk,-1);
+  while(ok(kk)&&n<999){n++;kk=shift(kk,-1);}
+  return n;
+}
+function renderDuty(r,sc){
+  var L=[];
+  L.push(["体重を記録する（起床直後）",r.w!=null,""]);
+  L.push(["食事を記録する",!!(r.items&&r.items.length),""]);
+  if(sc&&sc.day==="tr")L.push(["訓練を記録する（鍛錬タブ）",vol(r)>0,""]);
+  if(sc&&sc.meas)L.push(["周径を測る",!!(r.meas&&r.meas.wa!=null),"臍・上腕・大腿・ふくらはぎ"]);
+  if(sc&&sc.photo)L.push(["写真を撮る",!!r.photo,"同じ場所・光・角度で3枚"]);
+  if(sc&&sc.bcomp)L.push(["体組成を測る",r.bf!=null,"期の変わり目・同じ機器で"]);
+  var h="";
+  L.forEach(function(d){
+    h+='<li><span class="dm'+(d[1]?" ok":"")+'">'+(d[1]?"✓":"○")+'</span>'+
+       '<span class="dl'+(d[1]?" dim":"")+'">'+d[0]+(d[2]?' <small>'+d[2]+'</small>':"")+'</span></li>';
+  });
+  $("dutyList").innerHTML=h;
+  renderNowPh();
+  $("dutyWk").textContent=(sc?("第"+sc.week+"週・"+phName(sc.phase)+(sc.over?"（満了）":"")):"開始日 未設定")+" ／ 連続"+streakDays()+"日";
+}
+var measOpen=false;
+/* ---- 鍛錬 ---- */
+function renderTrain(){
+  var r=rec(cur);
+  var sr=$("segRt"); sr.innerHTML="";
+  ROUTINES.forEach(function(rt){
+    var b=document.createElement("button"); b.textContent=rt.n;
+    b.onclick=function(){
+      rt.ex.forEach(function(e){
+        var dup=r.train.some(function(t){return t.ex===e[0];});
+        if(!dup)r.train.push({ex:e[0],tgt:e[1],sets:[{w:null,r:null}]});
+      });
+      r.day="tr"; save(); render(); renderTrain();
+    };
+    sr.appendChild(b);
+  });
+  var se=$("selEx"); se.innerHTML="";
+  var o0=document.createElement("option"); o0.value=""; o0.textContent="— 選んで追加 —"; se.appendChild(o0);
+  EXDB.concat(meta().ex).forEach(function(n){
+    var o=document.createElement("option"); o.value=n; o.textContent=n; se.appendChild(o);
+  });
+  se.onchange=function(){
+    if(!se.value)return;
+    r.train.push({ex:se.value,tgt:"",sets:[{w:null,r:null}]});
+    se.value=""; save(); renderTrain();
+  };
+  var host=$("exList"); host.innerHTML="";
+  $("trEmpty").style.display=r.train.length?"none":"block";
+  r.train.forEach(function(e,ei){
+    var card=document.createElement("div"); card.className="exq";
+    var h=document.createElement("div"); h.className="exq-h";
+    h.innerHTML='<span class="xn">'+e.ex+'</span><span class="tg">'+(e.tgt||"")+'</span>';
+    var xd=document.createElement("button"); xd.className="xdel"; xd.textContent="×";
+    xd.setAttribute("aria-label",e.ex+"を削除");
+    xd.onclick=function(){ r.train.splice(ei,1); save(); renderTrain(); };
+    h.appendChild(xd); card.appendChild(h);
+    var bd=document.createElement("div"); bd.className="exq-b";
+    var lp=lastPerf(e.ex);
+    if(lp){ var pv=document.createElement("p"); pv.className="prev"; pv.textContent="前回 "+lp+"（kg×回）"; bd.appendChild(pv); }
+    (e.sets||[]).forEach(function(st,si){
+      var row=document.createElement("div"); row.className="setrow";
+      var sn=document.createElement("span"); sn.className="sn"; sn.textContent=(si+1); row.appendChild(sn);
+      var iw=document.createElement("input"); iw.type="number"; iw.step="0.5"; iw.inputMode="decimal"; iw.placeholder="kg";
+      iw.value=st.w==null?"":st.w;
+      iw.onchange=function(){ var v=parseFloat(iw.value); st.w=isFinite(v)?v:null; save(); sum(); };
+      row.appendChild(iw);
+      var ir=document.createElement("input"); ir.type="number"; ir.step="1"; ir.inputMode="numeric"; ir.placeholder="回";
+      ir.value=st.r==null?"":st.r;
+      ir.onchange=function(){ var v=parseInt(ir.value,10); st.r=isFinite(v)?v:null; save(); sum(); };
+      row.appendChild(ir);
+      var sd=document.createElement("button"); sd.className="sdel"; sd.textContent="×";
+      sd.setAttribute("aria-label","セット"+(si+1)+"を削除");
+      sd.onclick=function(){ e.sets.splice(si,1); save(); renderTrain(); };
+      row.appendChild(sd);
+      bd.appendChild(row);
+    });
+    var ab=document.createElement("button"); ab.className="addset"; ab.textContent="＋ セット";
+    ab.onclick=function(){ var last=e.sets[e.sets.length-1]||{}; e.sets.push({w:last.w!=null?last.w:null,r:null}); save(); renderTrain(); };
+    bd.appendChild(ab); card.appendChild(bd); host.appendChild(card);
+  });
+  sum();
+  function sum(){
+    var v=vol(r), sc=0;
+    r.train.forEach(function(e){ sc+=(e.sets||[]).filter(function(s){return s.w!=null&&s.r!=null;}).length; });
+    $("trSum").textContent=cur+"　総挙上量 "+Math.round(v).toLocaleString()+" kg ／ 記録済 "+sc+" セット";
+  }
+}
+/* ---- 表示切替 ---- */
+function show(v){
+  $("viewRec").classList.toggle("hide",v!=="rec");
+  $("viewTrain").classList.toggle("hide",v!=="tr");
+  $("viewCal").classList.toggle("hide",v!=="cal");
+  $("viewChart").classList.toggle("hide",v!=="chart");
+  $("tabRec").setAttribute("aria-pressed",v==="rec");
+  $("tabTr").setAttribute("aria-pressed",v==="tr");
+  $("tabCal").setAttribute("aria-pressed",v==="cal");
+  $("tabChart").setAttribute("aria-pressed",v==="chart");
+  if(v==="tr")renderTrain(); if(v==="cal")drawCal(); if(v==="chart")drawCharts();
+  window.scrollTo(0,0);
+}
+/* ---- 配線 ---- */
+$("tabRec").onclick=function(){show("rec");};
+$("tabTr").onclick=function(){show("tr");};
+$("tabCal").onclick=function(){show("cal");};
+$("tabChart").onclick=function(){show("chart");};
+$("calPrev").onclick=function(){calM.setMonth(calM.getMonth()-1);drawCal();};
+$("calNext").onclick=function(){calM.setMonth(calM.getMonth()+1);drawCal();};
+$("btnAdd").onclick=function(){
+  var f=curFood(); if(!f)return;
+  var v=parseFloat($("inpG").value); if(!v||v<=0){$("inpG").focus();return;}
+  rec(cur).items.push({n:f[0],g:f[6]?v*100:v});
+  $("inpG").value=""; save(); preview(); render();
+};
+$("inpG").addEventListener("input",preview);
+$("btnSegs").onclick=function(){ $("segWrap").classList.toggle("hide"); };
+$("btnEditFood").onclick=function(){
+  var el=$("foodEdit"), opening=el.classList?el.classList.contains("hide"):true;
+  el.classList.toggle("hide");
+  if(opening)fillFoodEdit();
+};
+$("btnFeSave").onclick=function(){
+  var f=curFood(); if(!f)return;
+  var v=[parseFloat($("feK").value),parseFloat($("feP").value),parseFloat($("feF").value),parseFloat($("feC").value)];
+  for(var i=0;i<4;i++){ if(isNaN(v[i])||v[i]<0){ alert("4項目すべてに0以上の数値を入れてください。"); return; } }
+  ovr()[f[0]]=v; save(); buildFoods(); fillFoodEdit(); preview(); render(); drawCharts();
+};
+$("btnFeReset").onclick=function(){
+  var f=curFood(); if(!f)return;
+  delete ovr()[f[0]]; save(); buildFoods(); fillFoodEdit(); preview(); render(); drawCharts();
+};
+$("inpW").addEventListener("change",function(){
+  var v=parseFloat(this.value); rec(cur).w=(v&&v>0)?v:null; save();
+});
+$("inpMK").addEventListener("change",function(){
+  var v=parseInt(this.value,10); var r=rec(cur);
+  r.mk=(v&&v>0)?v:null; save(); render();
+});
+$("btnFixed").onclick=function(){
+  fixed().forEach(function(f){rec(cur).items.push({n:f[0],g:f[1]});});
+  save(); render();
+};
+function fixTotals(){
+  var t={kcal:0,p:0};
+  fixed().forEach(function(it){ var f=find(it[0]); if(!f)return; var q=it[1]/100; t.kcal+=f[1]*q; t.p+=f[2]*q; });
+  return t;
+}
+function renderFix(){
+  var t=fixTotals();
+  $("fixNote").innerHTML=fixed().length
+    ? fixed().map(function(f){var x=find(f[0]);return f[0]+" "+f[1]+(x&&x[6]?"皿":"g");}).join("・")+" ＝ <b>"+Math.round(t.kcal)+"</b> kcal / P "+t.p.toFixed(0)+"g"
+    : "まだ何も入っていません。下の「中身を入れ替える」から加えてください。";
+  var ul=$("fixList"); if(!ul)return; ul.innerHTML="";
+  fixed().forEach(function(it,i){
+    var f=find(it[0]), li=document.createElement("li");
+    var q=it[1]/100, kc=f?Math.round(f[1]*q):0;
+    li.innerHTML="<span>"+it[0]+" <small>"+it[1]+(f&&f[6]?"皿":"g")+"</small></span><span>"+kc+" kcal</span>";
+    var b=document.createElement("button"); b.className="btn-ghost"; b.textContent="削除";
+    b.onclick=function(){ fixed().splice(i,1); save(); renderFix(); };
+    li.appendChild(b); ul.appendChild(li);
+  });
+}
+function renderMine(){
+  var ul=$("mineList"); if(!ul)return; ul.innerHTML="";
+  var mn=mine();
+  Object.keys(mn).forEach(function(n){
+    var li=document.createElement("li");
+    li.innerHTML="<span>"+n+" <small>"+mn[n][0]+"k P"+mn[n][1]+"</small></span>";
+    var b=document.createElement("button"); b.className="btn-ghost"; b.textContent="削除";
+    b.onclick=function(){
+      if(!confirm(n+" を削除します。この食材を使った過去の記録は集計から外れます。よろしいですか？"))return;
+      delete mn[n]; save(); mergeMine(); buildCats(); renderMine(); renderFix(); render(); drawCharts();
+    };
+    li.appendChild(b); ul.appendChild(li);
+  });
+  if(!Object.keys(mn).length)ul.innerHTML="<li><span>まだ登録がありません</span></li>";
+}
+$("btnEditFix").onclick=function(){ $("fixEdit").classList.toggle("hide"); renderFix(); };
+$("btnFixAdd").onclick=function(){
+  var f=curFood(), v=parseFloat($("inpG").value);
+  if(!f){ alert("食材を選んでください。"); return; }
+  if(!isFinite(v)||v<=0){ alert("数量を入れてから押してください。"); return; }
+  fixed().push([f[0], f[6]?v*100:v]); save(); renderFix();
+};
+$("btnFixReset").onclick=function(){ meta().fixed=FIXED.map(function(f){return [f[0],f[1]];}); save(); renderFix(); };
+$("btnNewFood").onclick=function(){ $("newFood").classList.toggle("hide"); renderMine(); };
+$("btnNfSave").onclick=function(){
+  var n=($("nfName").value||"").trim();
+  if(!n){ alert("名前を入れてください。"); return; }
+  if(find(n)&&!mine()[n]){ alert("同じ名前が既に一覧にあります。別の名前にしてください。"); return; }
+  var v=[parseFloat($("nfK").value),parseFloat($("nfP").value),parseFloat($("nfF").value),parseFloat($("nfC").value)];
+  for(var i=0;i<4;i++){ if(!isFinite(v[i])||v[i]<0){ alert("kcal・蛋白・脂質・炭水の4項目に0以上の数値を入れてください。"); return; } }
+  mine()[n]=[v[0],v[1],v[2],v[3],$("nfType").value==="d"?1:0];
+  save(); mergeMine(); buildCats();
+  $("selCat").value="自作"; buildFoods(); $("selFood").value=n; buildChips();
+  $("nfName").value=""; ["nfK","nfP","nfF","nfC"].forEach(function(id){$(id).value="";});
+  renderMine(); renderFix();
+};
+$("btnReset").onclick=function(){
+  var r=rec(cur); if(!r.items.length)return; r.items=[]; save(); render();
+};
+var SIMACT=[["","活動量を選択（具体例つき）"],
+ [2000,"運動なし — 通勤とデスクワークのみ"],
+ [2150,"軽い活動 — 散歩30分か軽い自重トレ"],
+ [2300,"筋トレ1時間 — 體躯之暦の訓練日"],
+ [2450,"筋トレ1時間＋有酸素30分"],
+ [2650,"激しい活動 — 肉体労働・スポーツ2時間"]];
+function buildSim(){
+  var se=$("simAct"); var keep=se.value; se.innerHTML="";
+  var arr=SIMACT.slice();
+  if(meta().prof){
+    var t=calcTDEE(getProf());
+    arr.splice(1,0,[t.tr,"計算値・訓練日（あなたの入力から）"],[t.rs,"計算値・休息日（あなたの入力から）"]);
+  }
+  arr.forEach(function(o){
+    var op=document.createElement("option"); op.value=o[0];
+    op.textContent=o[1]+(o[0]?("（消費 約"+o[0].toLocaleString()+"kcal）"):"");
+    se.appendChild(op);
+  });
+  if(keep)se.value=keep;
+}
+function simCalc(){
+  var out=$("simOut");
+  var tdee=parseInt($("simAct").value,10);
+  var d=parseFloat($("simDelta").value);
+  var n=parseInt($("simDays").value,10);
+  if(!tdee||isNaN(d)||!n||n<=0){ out.textContent="活動量を選び、±kcalと日数を入れると推定が出ます"; return; }
+  var intake=Math.round(tdee+d), tot=d*n, fat=tot/7200;
+  var lastW=64, ks=Object.keys(DATA).filter(function(k){return /^\d{4}-\d{2}-\d{2}$/.test(k)&&DATA[k].w!=null;}).sort();
+  if(ks.length)lastW=DATA[ks[ks.length-1]].w;
+  var wk=d*7/7200, pct=Math.abs(wk)/lastW*100;
+  var sgn=d<0?"−":"＋", fs=fat<0?"−":"＋";
+  var lo=Math.abs(fat)*0.8, hi=Math.abs(fat)*1.2;
+  var L=[];
+  L.push("摂取の目安 <b>"+intake.toLocaleString()+"</b> kcal/日（消費 "+tdee.toLocaleString()+" "+sgn+" "+Math.abs(d).toLocaleString()+"）");
+  L.push(n+"日後：脂肪 <b>"+fs+Math.abs(fat).toFixed(1)+" kg</b>（推定幅 "+fs+lo.toFixed(1)+"〜"+fs+hi.toFixed(1)+"）");
+  L.push("ペース：週 "+fs+Math.abs(wk).toFixed(2)+" kg ＝ 体重の "+pct.toFixed(1)+"%/週");
+  if(d<0){
+    L.push('<span style="color:#6B6259">初週は水分で別に1〜2kg動き、食事を戻すと戻ります。</span>');
+    if(intake<1300){
+      L.push('<span style="color:#8C3A3A"><b>摂取1,300kcal未満はRED-S（低エネルギー可用性）の領域。この試算は実行を勧めません。</b></span>');
+    }else if(d<=-700||pct>1){
+      L.push('<span style="color:#8C3A3A"><b>週1%超のペース。筋肉が削れ始める領域で、體躯之暦の範囲外です（限度4〜6週）。</b></span>');
+    }else if(d<=-250){
+      L.push('<span style="color:#56684A">體躯之暦の削ぎ期と同じ水準。筋トレ＋蛋白150gを守れば筋肉は維持できます。</span>');
+    }else{
+      L.push('<span style="color:#6B6259">緩やかな赤字。時間はかかりますが最も安全な帯です。</span>');
+    }
+  }else if(d>0){
+    L.push('<span style="color:#A8813C">初心者の黒字は＋200〜300kcalまでが筋に回りやすい水準。それ以上は脂肪が主体になります。</span>');
+  }
+  out.innerHTML=L.join("<br>");
+}
+$("btnExAdd").onclick=function(){
+  var n=($("inpEx").value||"").trim(); if(!n)return;
+  var r=rec(cur);
+  r.train.push({ex:n,tgt:"",sets:[{w:null,r:null}]});
+  var m=meta(); if(EXDB.indexOf(n)<0&&m.ex.indexOf(n)<0)m.ex.push(n);
+  $("inpEx").value=""; save(); renderTrain();
+};
+function bkStamp(){ meta().bk=ymd(new Date()); save(); renderBk(); }
+function renderBk(){
+  var el=$("bkNote"), ban=$("bkBan"), last=meta().bk, now=new Date();
+  var ym=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+  var doneThisMonth = last && last.slice(0,7)===ym;
+  if(el){
+    if(!last){ el.innerHTML='<b style="color:#9B4B3F">まだ控えを取っていません。</b>下のボタンで1回保存しておいてください。'; }
+    else{
+      var d=Math.round((new Date(ymd(now))-new Date(last))/86400000);
+      el.innerHTML='最後の控え：'+last+'（'+d+'日前）'+(doneThisMonth?' <b style="color:#5E7A54">今月分は済</b>':'');
+    }
+  }
+  if(ban){
+    if(now.getDate()>=15 && !doneThisMonth){
+      ban.innerHTML='<b>◆ 今月の控えを保存する日です（毎月15日）</b><br>'+
+        '画面下の<b>「図」タブ</b>を開き、一番下の<b>「控えを1タップで保存」</b>を押してください。'+
+        (last?'　最後の控えは '+last+'。':'　まだ一度も保存していません。');
+      ban.classList.add("on");
+    } else { ban.classList.remove("on"); }
+  }
+}
+$("btnBackup").onclick=function(){
+  try{
+    var blob=new Blob([JSON.stringify(DATA)],{type:"application/json"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="計量之器_"+ymd(new Date())+".json";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
+    bkStamp();
+  }catch(e){ $("io").value=JSON.stringify(DATA); alert("ファイル保存が使えない環境でした。下の枠に出力したので、コピーして保管してください。"); }
+};
+$("btnCopy").onclick=function(){
+  var t=JSON.stringify(DATA);
+  $("io").value=t;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(function(){ bkStamp(); alert("控えをコピーしました。メモアプリなどに貼り付けて保管してください。"); },
+      function(){ alert("コピーできませんでした。下の枠を手動で選択してコピーしてください。"); });
+  } else { alert("下の枠を手動で選択してコピーしてください。"); }
+};
+$("btnExport").onclick=function(){ $("io").value=JSON.stringify(DATA); bkStamp(); };
+$("btnImport").onclick=function(){
+  try{ var o=JSON.parse($("io").value); if(o&&typeof o==="object"){ DATA=o; save(); mergeMine(); buildCats(); renderFix(); renderMine(); render(); drawCharts(); } }
+  catch(e){ $("io").value="読み込めませんでした。書き出した文字列をそのまま貼り付けてください。"; }
+};
+/* ---- 起動 ---- */
+mergeMine(); buildCats(); buildSim(); render(); renderFix(); renderBk();
+[["inpWa","wa"],["inpAr","ar"],["inpTh","th"],["inpCa","ca"]].forEach(function(f){
+  $(f[0]).addEventListener("change",function(){
+    var v=parseFloat(this.value), r=rec(cur);
+    r.meas=r.meas||{}; r.meas[f[1]]=isFinite(v)&&v>0?v:null;
+    save(); render();
+  });
+});
+$("btnPhoto").onclick=function(){ var r=rec(cur); r.photo=!r.photo; save(); render(); };
+$("inpBFd").addEventListener("change",function(){
+  var v=parseFloat(this.value), r=rec(cur);
+  r.bf=isFinite(v)&&v>0?v:null;
+  if(r.bf!=null){ var m=meta(); m.prof=m.prof||{}; m.prof.bf=r.bf; }
+  save(); render(); buildSim();
+});
+$("btnMeas").onclick=function(){ measOpen=true; render(); };
+$("btnPlan").onclick=function(){
+  var el=$("planBox"), opening=el.classList?el.classList.contains("hide"):true;
+  el.classList.toggle("hide");
+  if(opening){ var pl=getPlan(); $("planStart").value=pl.start||""; $("planDow").value=pl.measDow; }
+};
+function savePlan(){
+  var m=meta(); m.plan=m.plan||{};
+  m.plan.start=$("planStart").value||null;
+  m.plan.measDow=parseInt($("planDow").value,10)||0;
+  var t=ymd(new Date()), sc=sched(t);
+  if(sc){ var r=rec(t); if(r.phase!=="man")r.phase=sc.phase; r.day=sc.day; }
+  save(); render();
+}
+$("planStart").addEventListener("change",savePlan);
+$("planDow").addEventListener("change",savePlan);
+$("btnMkCalc").onclick=function(){
+  var el=$("mkCalc");
+  var opening=el.classList ? el.classList.contains("hide") : true;
+  el.classList.toggle("hide");
+  if(opening)fillProf();
+};
+PROF_NUM.concat(PROF_SEL).forEach(function(f){
+  $(f[0]).addEventListener("change",function(){ readProf(); renderMkOut(); buildSim(); });
+});
+$("mkApM").onclick=function(){applyMk(0);};
+$("mkAp3").onclick=function(){applyMk(-300);};
+$("mkAp5").onclick=function(){applyMk(-500);};
+$("simAct").addEventListener("change",simCalc);
+$("simDelta").addEventListener("input",simCalc);
+$("simDays").addEventListener("input",simCalc);
+loadRaw().then(function(v){
+  if(v){ try{ var o=JSON.parse(v); if(o&&typeof o==="object")DATA=o; }catch(e){} }
+  mergeMine(); buildCats(); renderFix(); renderBk();
+  render(); buildSim();
+  if(mode==="mem"){
+    var w=$("storeWarn"); w.classList.remove("hide");
+    w.innerHTML="<strong>この画面では自動保存が効きません。</strong>「図」タブの一番下から記録を書き出して控えておくか、このファイルを端末に保存して直接開いてください。端末で開けば自動保存が有効になります。";
+  }
+});
+})();
+</script>
+</body>
+</html>
